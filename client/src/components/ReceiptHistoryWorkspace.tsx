@@ -4,8 +4,8 @@
  */
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Download, FileText, History, LockKeyhole, Plus, Save, Search, ShieldCheck, Tag, Trash2, Upload, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Archive, Download, FileText, History, LockKeyhole, Pencil, Plus, Save, Search, ShieldCheck, Tag, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 export type HistoryReceipt = {
   label: string;
@@ -21,6 +21,7 @@ export type HistoryReceipt = {
 
 type Range = "all" | "24h" | "7d" | "30d" | "custom";
 type FilterPreset = { id: string; name: string; filter: "all" | "errors" | "restore"; range: Range; from: string; to: string; tagFilter: string };
+type ArchiveOption = { id: string; name: string; createdAt: string; updatedAt: string; receiptCount: number };
 const FILTER_PRESET_KEY = "acc-receipt-filter-presets-v1";
 
 function localTime(value: string, language: "en" | "ar" | "other") {
@@ -30,6 +31,12 @@ function localTime(value: string, language: "en" | "ar" | "other") {
 export function ReceiptHistoryWorkspace({
   language,
   history,
+  archives,
+  activeArchiveId,
+  selectArchive,
+  createArchive,
+  renameArchive,
+  deleteArchive,
   remove,
   clear,
   updateTags,
@@ -39,6 +46,12 @@ export function ReceiptHistoryWorkspace({
 }: {
   language: "en" | "ar" | "other";
   history: HistoryReceipt[];
+  archives: ArchiveOption[];
+  activeArchiveId: string;
+  selectArchive: (id: string) => void;
+  createArchive: (name: string) => void;
+  renameArchive: (id: string, name: string) => void;
+  deleteArchive: (id: string) => void;
   remove: (key: string) => void;
   clear: () => void;
   updateTags: (key: string, tags: string[]) => void;
@@ -60,10 +73,13 @@ export function ReceiptHistoryWorkspace({
   const [importPassword, setImportPassword] = useState("");
   const [recovering, setRecovering] = useState(false);
   const [presetName, setPresetName] = useState("");
+  const [archiveName, setArchiveName] = useState("");
+  const [renameName, setRenameName] = useState("");
   const [presets, setPresets] = useState<FilterPreset[]>(() => {
     try { return JSON.parse(localStorage.getItem(FILTER_PRESET_KEY) || "[]") as FilterPreset[]; } catch { return []; }
   });
   const keyFor = (receipt: HistoryReceipt) => `${receipt.at}-${receipt.command}-${receipt.label}`;
+  const activeArchive = archives.find((archive) => archive.id === activeArchiveId);
   const allTags = useMemo(() => Array.from(new Set(history.flatMap((receipt) => receipt.tags || []))).sort((left, right) => left.localeCompare(right)), [history]);
   const visible = useMemo(() => {
     const now = Date.now();
@@ -111,6 +127,9 @@ export function ReceiptHistoryWorkspace({
     setFilter(preset.filter); setRange(preset.range); setFrom(preset.from); setTo(preset.to); setTagFilter(preset.tagFilter);
   };
   const removePreset = (id: string) => persistPresets(presets.filter((preset) => preset.id !== id));
+  useEffect(() => { setRenameName(activeArchive?.name || ""); }, [activeArchive?.id, activeArchive?.name]);
+  const addArchive = () => { if (!archiveName.trim()) return; createArchive(archiveName); setArchiveName(""); };
+  const renameActiveArchive = () => { if (!activeArchive || !renameName.trim()) return; renameArchive(activeArchive.id, renameName); };
   const recoverArchive = async () => {
     if (!importFile) return;
     setRecovering(true);
@@ -118,7 +137,8 @@ export function ReceiptHistoryWorkspace({
   };
 
   return <section className="space-y-5">
-    <div className="service-card p-6"><div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="kicker text-[#687584]">{isArabic ? "أرشيف محلي / سجل الأوامر" : "Local archive / command ledger"}</p><h2 className="mt-1 text-3xl font-bold tracking-[-0.05em]">{isArabic ? "راجع الإيصالات السابقة من هذا المتصفح." : "Review prior receipts from this browser."}</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[#526273]">{isArabic ? "تُخزن الإيصالات في مساحة التخزين المحلية للمتصفح فقط. احذف السجل أو صدّره متى شئت؛ لا تُرسل بيانات الجهاز إلى خادم." : "Receipts are kept only in this browser’s local storage. Remove or export them whenever you choose; no device data is sent to a server."}</p></div><div className="flex flex-wrap gap-2"><Button onClick={() => exportHistory("json")} variant="outline" className="action-button border-[#14253a]"><Download className="mr-2" size={15} />JSON</Button><Button onClick={() => exportHistory("md")} variant="outline" className="action-button border-[#14253a]"><FileText className="mr-2" size={15} />Markdown</Button><Button onClick={clear} variant="outline" className="action-button border-[#934639] text-[#934639] hover:bg-[#fbe5df]"><Trash2 className="mr-2" size={15} />{isArabic ? "مسح السجل" : "Clear history"}</Button></div></div>
+    <div className="service-card p-6"><div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="kicker text-[#687584]">{isArabic ? "أرشيف محلي / سجل الأوامر" : "Local archive / command ledger"}</p><h2 className="mt-1 text-3xl font-bold tracking-[-0.05em]">{isArabic ? "راجع الإيصالات السابقة من هذا المتصفح." : "Review prior receipts from this browser."}</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[#526273]">{isArabic ? "تُخزن الإيصالات في مساحة التخزين المحلية للمتصفح فقط. أنشئ أرشيفات مسماة، بدّل بينها، أو صدّر النشط منها متى شئت؛ لا تُرسل بيانات الجهاز إلى خادم." : "Receipts are kept only in this browser’s local storage. Create named archives, switch among them, or export the active one whenever you choose; no device data is sent to a server."}</p></div><div className="flex flex-wrap gap-2"><Button onClick={() => exportHistory("json")} variant="outline" className="action-button border-[#14253a]"><Download className="mr-2" size={15} />JSON</Button><Button onClick={() => exportHistory("md")} variant="outline" className="action-button border-[#14253a]"><FileText className="mr-2" size={15} />Markdown</Button><Button onClick={clear} variant="outline" className="action-button border-[#934639] text-[#934639] hover:bg-[#fbe5df]"><Trash2 className="mr-2" size={15} />{isArabic ? "مسح الأرشيف النشط" : "Clear active archive"}</Button></div></div>
+      <div className="mt-6 border-y border-[#d8d1c4] bg-[#f3efe6] p-4"><div className="flex items-center gap-2"><Archive size={17} className="text-[#59869c]" /><div><p className="kicker text-[#687584]">{isArabic ? "رف الأرشيفات" : "Archive shelf"}</p><p className="mt-1 text-xs text-[#526273]">{isArabic ? `الأرشيف النشط: ${activeArchive?.name || "—"} · ${history.length} إيصالاً` : `Active: ${activeArchive?.name || "—"} · ${history.length} receipt(s)`}</p></div></div><div className="mt-3 flex flex-wrap gap-2">{archives.map((archive) => <button key={archive.id} onClick={() => selectArchive(archive.id)} className={`action-button border px-2.5 py-1.5 text-xs ${archive.id === activeArchiveId ? "border-[#527321] bg-[#eef8cd] text-[#35501c]" : "border-[#d8d1c4] bg-[#fffdf8] text-[#526273] hover:border-[#59869c]"}`}>{archive.name} <span className="mono opacity-70">{archive.receiptCount}</span></button>)}</div><div className="mt-4 grid gap-2 lg:grid-cols-[1fr_auto_1fr_auto_auto]"><input value={archiveName} onChange={(event) => setArchiveName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addArchive()} placeholder={isArabic ? "اسم أرشيف جديد" : "New archive name"} className="h-9 min-w-0 border border-[#d8d1c4] bg-[#fffdf8] px-3 text-sm outline-none focus:border-[#59869c]" /><Button onClick={addArchive} variant="outline" className="action-button border-[#59869c] text-[#35501c]"><Plus className="mr-2" size={14} />{isArabic ? "إنشاء" : "Create"}</Button><input value={renameName} onChange={(event) => setRenameName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && renameActiveArchive()} placeholder={isArabic ? "إعادة تسمية النشط" : "Rename active archive"} className="h-9 min-w-0 border border-[#d8d1c4] bg-[#fffdf8] px-3 text-sm outline-none focus:border-[#59869c]" /><Button onClick={renameActiveArchive} disabled={!activeArchive || !renameName.trim()} variant="outline" className="action-button border-[#59869c] text-[#526273]"><Pencil className="mr-2" size={14} />{isArabic ? "تعديل" : "Rename"}</Button><Button onClick={() => activeArchive && deleteArchive(activeArchive.id)} disabled={!activeArchive || archives.length < 2} variant="outline" className="action-button border-[#934639] text-[#934639] hover:bg-[#fbe5df]"><Trash2 className="mr-2" size={14} />{isArabic ? "حذف" : "Delete"}</Button></div></div>
       <div className="mt-6 grid gap-3 border-t border-[#d8d1c4] pt-5 lg:grid-cols-[1fr_auto_auto]"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#687584]" size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={isArabic ? "ابحث في الأوامر أو النتائج أو الوسوم" : "Search commands, results, or tags"} className="h-10 w-full border border-[#d8d1c4] bg-[#fffdf8] pl-9 pr-3 text-sm outline-none focus:border-[#14253a]" /></div><select value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)} className="h-10 border border-[#d8d1c4] bg-[#fffdf8] px-3 text-sm"><option value="all">{isArabic ? "كل الإيصالات" : "All receipts"}</option><option value="errors">{isArabic ? "الأخطاء فقط" : "Errors only"}</option><option value="restore">{isArabic ? "تحتوي على استعادة" : "Has restore path"}</option></select><select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)} className="h-10 border border-[#d8d1c4] bg-[#fffdf8] px-3 text-sm"><option value="all">{isArabic ? "كل الوسوم" : "All tags"}</option>{allTags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}</select></div>
       <div className="mt-3 grid gap-3 sm:grid-cols-[auto_1fr_1fr]"><select value={range} onChange={(event) => setRange(event.target.value as Range)} className="h-10 border border-[#d8d1c4] bg-[#fffdf8] px-3 text-sm"><option value="all">{isArabic ? "كل الوقت" : "All time"}</option><option value="24h">{isArabic ? "آخر 24 ساعة" : "Last 24 hours"}</option><option value="7d">{isArabic ? "آخر 7 أيام" : "Last 7 days"}</option><option value="30d">{isArabic ? "آخر 30 يوماً" : "Last 30 days"}</option><option value="custom">{isArabic ? "نطاق مخصص" : "Custom range"}</option></select>{range === "custom" && <><input type="date" value={from} onChange={(event) => setFrom(event.target.value)} aria-label={isArabic ? "من تاريخ" : "From date"} className="h-10 border border-[#d8d1c4] bg-[#fffdf8] px-3 text-sm" /><input type="date" value={to} onChange={(event) => setTo(event.target.value)} aria-label={isArabic ? "إلى تاريخ" : "To date"} className="h-10 border border-[#d8d1c4] bg-[#fffdf8] px-3 text-sm" /></>}</div>
       <div className="mt-4 border-t border-[#d8d1c4] pt-4"><div className="flex flex-col gap-2 sm:flex-row"><input value={presetName} onChange={(event) => setPresetName(event.target.value)} onKeyDown={(event) => event.key === "Enter" && savePreset()} placeholder={isArabic ? "اسم إعداد التدقيق" : "Audit preset name"} className="h-9 min-w-0 flex-1 border border-[#d8d1c4] bg-[#fffdf8] px-3 text-sm outline-none focus:border-[#59869c]" /><Button onClick={savePreset} variant="outline" className="action-button border-[#59869c] text-[#35501c]"><Save className="mr-2" size={15} />{isArabic ? "حفظ الإعداد" : "Save preset"}</Button></div>{presets.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{presets.map((preset) => <span key={preset.id} className="inline-flex items-center border border-[#b9da71] bg-[#eef8cd] text-xs text-[#35501c]"><button onClick={() => applyPreset(preset.id)} className="action-button px-2 py-1.5">{preset.name}</button><button onClick={() => removePreset(preset.id)} className="action-button border-l border-[#b9da71] px-1.5 py-1.5" aria-label={isArabic ? "حذف الإعداد" : "Delete preset"}><X size={13} /></button></span>)}</div>}</div>

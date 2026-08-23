@@ -53,6 +53,7 @@ import { toast } from "sonner";
 type Workspace = "overview" | "debloat" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "history" | "about";
 type InterfaceLanguage = "en" | "ar" | "other";
 type Receipt = CommandResult & { label: string; authority: "USB" | "Root" | "Browser"; restore?: string };
+type ReceiptArchive = { id: string; name: string; createdAt: string; updatedAt: string; receipts: HistoryReceipt[] };
 
 const nav: Array<{ id: Workspace; label: string; icon: typeof Smartphone }> = [
   { id: "overview", label: "Device desk", icon: Smartphone },
@@ -107,6 +108,9 @@ const initialReceipt: Receipt = {
 };
 
 const RECEIPT_HISTORY_KEY = "acc-receipt-history-v1";
+const RECEIPT_ARCHIVES_KEY = "acc-receipt-archives-v1";
+const ACTIVE_RECEIPT_ARCHIVE_KEY = "acc-active-receipt-archive-v1";
+const PRIMARY_ARCHIVE_ID = "primary";
 
 function shortTime(value: string) {
   return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(value));
@@ -150,6 +154,23 @@ function isHistoryReceipt(value: unknown): value is HistoryReceipt {
   return typeof receipt.label === "string" && typeof receipt.command === "string" && typeof receipt.stdout === "string" && typeof receipt.stderr === "string" && typeof receipt.exitCode === "number" && typeof receipt.at === "string" && (receipt.authority === "USB" || receipt.authority === "Root" || receipt.authority === "Browser");
 }
 
+function loadReceiptArchives(): ReceiptArchive[] {
+  try {
+    const stored = JSON.parse(localStorage.getItem(RECEIPT_ARCHIVES_KEY) || "[]") as Partial<ReceiptArchive>[];
+    const valid = stored
+      .filter((archive): archive is ReceiptArchive => typeof archive?.id === "string" && typeof archive.name === "string" && typeof archive.createdAt === "string" && typeof archive.updatedAt === "string" && Array.isArray(archive.receipts))
+      .map((archive) => ({ ...archive, receipts: archive.receipts.filter(isHistoryReceipt).slice(0, 240) }));
+    if (valid.length) return valid.slice(0, 24);
+  } catch { /* migrate legacy browser-local history below */ }
+  const now = new Date().toISOString();
+  try {
+    const legacy = JSON.parse(localStorage.getItem(RECEIPT_HISTORY_KEY) || "[]") as unknown[];
+    return [{ id: PRIMARY_ARCHIVE_ID, name: "Primary ledger", createdAt: now, updatedAt: now, receipts: legacy.filter(isHistoryReceipt).slice(0, 240) }];
+  } catch {
+    return [{ id: PRIMARY_ARCHIVE_ID, name: "Primary ledger", createdAt: now, updatedAt: now, receipts: [] }];
+  }
+}
+
 export default function Home() {
   const adb = useRef(new BrowserAdbClient());
   const mirrorCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -169,14 +190,8 @@ export default function Home() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [actionMode, setActionMode] = useState<"disable" | "uninstall">("disable");
   const [receipts, setReceipts] = useState<Receipt[]>([initialReceipt]);
-  const [receiptHistory, setReceiptHistory] = useState<HistoryReceipt[]>(() => {
-    try {
-      const saved = localStorage.getItem(RECEIPT_HISTORY_KEY);
-      return saved ? (JSON.parse(saved) as HistoryReceipt[]).slice(0, 240) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [receiptArchives, setReceiptArchives] = useState<ReceiptArchive[]>(loadReceiptArchives);
+  const [activeReceiptArchiveId, setActiveReceiptArchiveId] = useState(() => localStorage.getItem(ACTIVE_RECEIPT_ARCHIVE_KEY) || PRIMARY_ARCHIVE_ID);
   const [files, setFiles] = useState<DeviceFile[]>([]);
   const [filePath, setFilePath] = useState("/sdcard/Download");
   const [fileLoading, setFileLoading] = useState(false);
@@ -186,6 +201,17 @@ export default function Home() {
   const [language, setLanguage] = useState<InterfaceLanguage>(() => (localStorage.getItem("acc-language") as InterfaceLanguage) || "en");
   const [mirrorState, setMirrorState] = useState<MirrorState>({ phase: "idle", detail: "Connect and authorize a device, then start an explicit local Scrcpy session." });
   const [recoveryScriptName, setRecoveryScriptName] = useState("android-control-recovery");
+
+  const activeReceiptArchive = useMemo(() => receiptArchives.find((archive) => archive.id === activeReceiptArchiveId) || receiptArchives[0], [receiptArchives, activeReceiptArchiveId]);
+  const receiptHistory = activeReceiptArchive?.receipts || [];
+  const setReceiptHistory = (next: HistoryReceipt[] | ((current: HistoryReceipt[]) => HistoryReceipt[])) => {
+    const archiveId = activeReceiptArchive?.id || PRIMARY_ARCHIVE_ID;
+    setReceiptArchives((current) => current.map((archive) => {
+      if (archive.id !== archiveId) return archive;
+      const receipts = typeof next === "function" ? next(archive.receipts) : next;
+      return { ...archive, receipts: receipts.slice(0, 240), updatedAt: new Date().toISOString() };
+    }));
+  };
 
   const mappedPackages = useMemo(() => {
     const mapped = new Map(catalog.map((item) => [item.id, item]));
@@ -242,11 +268,13 @@ export default function Home() {
 
   const exportHistory = (format: "json" | "md") => {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const archiveName = activeReceiptArchive?.name || "receipt-archive";
+    const safeArchiveName = archiveName.trim().replace(/[^A-Za-z0-9._-]/g, "-") || "receipt-archive";
     if (format === "json") {
-      downloadLocal(`android-control-history-${stamp}.json`, JSON.stringify({ exportedAt: new Date().toISOString(), receipts: receiptHistory }, null, 2), "application/json");
+      downloadLocal(`android-control-${safeArchiveName}-${stamp}.json`, JSON.stringify({ exportedAt: new Date().toISOString(), archiveName, receipts: receiptHistory }, null, 2), "application/json");
     } else {
-      const report = [`# Android Control Center — Receipt History`, "", `Exported: ${new Date().toISOString()}`, "", ...receiptHistory.flatMap((receipt, index) => [`## ${index + 1}. ${receipt.label}`, "", `- **Authority:** ${receipt.authority}`, `- **Time:** ${receipt.at}`, `- **Command:** \`${receipt.command}\``, `- **Exit code:** ${receipt.exitCode}`, `- **Output:** ${receipt.stderr || receipt.stdout || "(none)"}`, receipt.restore ? `- **Restore:** \`${receipt.restore}\`` : "", ""])].join("\n");
-      downloadLocal(`android-control-history-${stamp}.md`, report, "text/markdown");
+      const report = [`# Android Control Center — ${archiveName}`, "", `Exported: ${new Date().toISOString()}`, "", ...receiptHistory.flatMap((receipt, index) => [`## ${index + 1}. ${receipt.label}`, "", `- **Authority:** ${receipt.authority}`, `- **Time:** ${receipt.at}`, `- **Command:** \`${receipt.command}\``, `- **Exit code:** ${receipt.exitCode}`, `- **Output:** ${receipt.stderr || receipt.stdout || "(none)"}`, receipt.restore ? `- **Restore:** \`${receipt.restore}\`` : "", ""])].join("\n");
+      downloadLocal(`android-control-${safeArchiveName}-${stamp}.md`, report, "text/markdown");
     }
     toast.success(language === "ar" ? "تم حفظ تصدير الأرشيف محلياً." : "Receipt-history export saved locally.");
   };
@@ -262,11 +290,13 @@ export default function Home() {
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const material = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
     const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" }, material, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
-    const payload = JSON.stringify({ version: 1, createdAt: new Date().toISOString(), receipts: receiptHistory });
+    const archiveName = activeReceiptArchive?.name || "receipt-archive";
+    const safeArchiveName = archiveName.trim().replace(/[^A-Za-z0-9._-]/g, "-") || "receipt-archive";
+    const payload = JSON.stringify({ version: 1, createdAt: new Date().toISOString(), archiveName, receipts: receiptHistory });
     const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoder.encode(payload)));
     const envelope = { format: "android-control-encrypted-history", version: 1, cipher: "AES-256-GCM", kdf: { name: "PBKDF2", hash: "SHA-256", iterations: 250000, salt: bytesToBase64(salt) }, iv: bytesToBase64(iv), ciphertext: bytesToBase64(ciphertext) };
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    downloadLocal(`android-control-history-${stamp}.encrypted.json`, JSON.stringify(envelope, null, 2), "application/json");
+    downloadLocal(`android-control-${safeArchiveName}-${stamp}.encrypted.json`, JSON.stringify(envelope, null, 2), "application/json");
     toast.success(language === "ar" ? "تم تصدير الأرشيف المشفر محلياً." : "Encrypted archive exported locally.");
   };
 
@@ -306,6 +336,32 @@ export default function Home() {
   const clearReceiptHistory = () => {
     setReceiptHistory([]);
     toast.success(language === "ar" ? "تم مسح أرشيف الإيصالات المحلي." : "Local receipt history cleared.");
+  };
+
+  const createReceiptArchive = (name: string) => {
+    const normalized = name.trim().replace(/\s+/g, " ").slice(0, 48);
+    if (!normalized) return;
+    if (receiptArchives.some((archive) => archive.name.toLocaleLowerCase() === normalized.toLocaleLowerCase())) {
+      toast.error(language === "ar" ? "يوجد أرشيف بهذا الاسم بالفعل." : "An archive with this name already exists.");
+      return;
+    }
+    const now = new Date().toISOString();
+    const archive = { id: `archive-${Date.now()}`, name: normalized, createdAt: now, updatedAt: now, receipts: [] };
+    setReceiptArchives((current) => [archive, ...current].slice(0, 24));
+    setActiveReceiptArchiveId(archive.id);
+  };
+
+  const renameReceiptArchive = (id: string, name: string) => {
+    const normalized = name.trim().replace(/\s+/g, " ").slice(0, 48);
+    if (!normalized || receiptArchives.some((archive) => archive.id !== id && archive.name.toLocaleLowerCase() === normalized.toLocaleLowerCase())) return;
+    setReceiptArchives((current) => current.map((archive) => archive.id === id ? { ...archive, name: normalized, updatedAt: new Date().toISOString() } : archive));
+  };
+
+  const deleteReceiptArchive = (id: string) => {
+    if (receiptArchives.length < 2) { toast.error(language === "ar" ? "احتفظ بأرشيف محلي واحد على الأقل." : "Keep at least one local archive."); return; }
+    const remaining = receiptArchives.filter((archive) => archive.id !== id);
+    setReceiptArchives(remaining);
+    if (activeReceiptArchive?.id === id) setActiveReceiptArchiveId(remaining[0].id);
   };
 
   const inspectAfterConnect = async () => {
@@ -481,11 +537,13 @@ export default function Home() {
 
   useEffect(() => {
     try {
+      localStorage.setItem(RECEIPT_ARCHIVES_KEY, JSON.stringify(receiptArchives));
+      localStorage.setItem(ACTIVE_RECEIPT_ARCHIVE_KEY, activeReceiptArchive?.id || PRIMARY_ARCHIVE_ID);
       localStorage.setItem(RECEIPT_HISTORY_KEY, JSON.stringify(receiptHistory));
     } catch {
       toast.error(language === "ar" ? "تعذر حفظ أرشيف الإيصالات محلياً." : "Receipt history could not be saved locally.");
     }
-  }, [receiptHistory, language]);
+  }, [receiptArchives, activeReceiptArchive?.id, receiptHistory, language]);
 
   const changeLanguage = (next: InterfaceLanguage) => {
     setLanguage(next);
@@ -610,7 +668,7 @@ export default function Home() {
         {active === "profiles" && <ProfilesWorkspace language={language} isLive={isLive} output={userOutput} refresh={async () => { try { const result = await adb.current.listUsers(); setUserOutput(result.stdout); addReceipt(result, language === "ar" ? "تم تحديث مستخدمي وملفات أندرويد" : "Refreshed Android users and profiles"); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to inspect profiles."); } }} />}
         {active === "apk" && <ApkInspectionWorkspace language={language} isLive={isLive} install={installApk} />}
         {active === "files" && <FilesWorkspace language={language} isLive={isLive} path={filePath} setPath={setFilePath} files={files} loading={fileLoading} load={loadFiles} />}
-        {active === "history" && <ReceiptHistoryWorkspace language={language} history={receiptHistory} remove={removeHistoryReceipt} clear={clearReceiptHistory} updateTags={updateHistoryTags} exportHistory={exportHistory} protectHistory={protectHistory} importHistory={importProtectedHistory} />}
+        {active === "history" && <ReceiptHistoryWorkspace language={language} history={receiptHistory} archives={receiptArchives.map(({ id, name, createdAt, updatedAt, receipts }) => ({ id, name, createdAt, updatedAt, receiptCount: receipts.length }))} activeArchiveId={activeReceiptArchive?.id || PRIMARY_ARCHIVE_ID} selectArchive={setActiveReceiptArchiveId} createArchive={createReceiptArchive} renameArchive={renameReceiptArchive} deleteArchive={deleteReceiptArchive} remove={removeHistoryReceipt} clear={clearReceiptHistory} updateTags={updateHistoryTags} exportHistory={exportHistory} protectHistory={protectHistory} importHistory={importProtectedHistory} />}
         {active === "about" && <AboutWorkspace language={language} />}
 
         <section className="mt-7 border-t border-[#d8d1c4] pt-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="kicker text-[#687584]">{isArabic ? "تفاصيل المشغّل" : "Operator detail"}</p><span className="status-stamp text-[#59869c]">{isArabic ? "مسجل" : "logged"}</span></div><p className="mt-1 text-sm text-[#526273]">{isArabic ? "شغّل أمر shell مقصوداً. يُسجل كما هو ويستخدم تصحيح USB القياسي ما لم تكتب أمر su -c بنفسك." : "Run a deliberate shell command. It is logged as-is and uses standard USB debugging unless you write an `su -c` command yourself."}</p></div><div className="flex w-full max-w-xl gap-2"><input value={terminal} onChange={(event) => setTerminal(event.target.value)} onKeyDown={(event) => event.key === "Enter" && runTerminal()} placeholder="e.g. getprop ro.build.fingerprint" className="h-10 min-w-0 flex-1 border border-[#d8d1c4] bg-[#fffdf8] px-3 mono text-xs outline-none focus:border-[#14253a]" /><Button onClick={runTerminal} disabled={!isLive || terminalRunning} variant="outline" className="action-button border-[#14253a]">{terminalRunning ? <Loader2 className="animate-spin" size={16} /> : <TerminalSquare size={16} />}</Button></div></div></section>

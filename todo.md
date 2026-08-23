@@ -31,3 +31,9 @@
 - [x] Add browser-local saved receipt-filter presets.
 - [x] Validate recovery, APK inspection, presets, and project quality.
 - [ ] Save the secure recovery and APK inspection checkpoint.
+- [x] Add APK v2/v3 signing-scheme inspection and trusted fingerprint comparison.
+- [x] Add a browser-local trusted certificate fingerprint list.
+- [x] Add named browser-local receipt archives with quick switching.
+- [x] Add plain-language explanations and red alerts for sensitive APK permissions.
+- [x] Validate signing, archive switching, permission explanations, and project quality.
+- [ ] Save the APK trust and multi-archive checkpoint.

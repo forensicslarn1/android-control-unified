@@ -25,3 +25,11 @@ An offline APK fixture was selected without a connected device. The inspection c
 For end-to-end recovery validation, a temporary QA receipt was written directly to the browser’s local receipt-history storage and the page was reloaded. No Android device data is involved in this test. The record will be exported, recovered through the in-app workflow, and removed before delivery.
 
 The temporary QA receipt was exported with a 13-character password, removed from local history, then selected through the in-app recovery panel. The matching password restored exactly one receipt locally, confirmed by the Arabic recovery notification and the restored command entry. The temporary receipt and downloaded test archive will be removed before delivery.
+
+## Named archive shelf
+
+The live Arabic workspace displayed the named browser-local archive shelf with the migrated `Primary ledger` and a newly created temporary `Case review` archive. Creating the second archive immediately activated it, exposed both quick-switch chips, preserved each archive’s receipt count, and enabled rename/delete controls while retaining the primary archive. The temporary archive will be removed during QA cleanup.
+
+## Modern APK signature and trust QA
+
+The official F-Droid APK was selected for local inspection only; it was not installed or executed. The interface verified one v2 signer and one v3 signer, including each whole-file content digest, and showed the same SHA-256 certificate fingerprint listed in F-Droid’s release-key documentation. Eight sensitive manifest permissions rendered as red alert cards with Arabic explanations. A temporary local `F-Droid QA` fingerprint entry switched the displayed signer state to trusted; the temporary entry and fixture will be removed during cleanup.
