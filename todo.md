@@ -5,3 +5,7 @@
 - [x] Add Arabic, English, and other-language selector states to the dashboard.
 - [x] Verify the About section and language selector visually.
 - [ ] Save the updated project checkpoint.
+- [x] Add a persisted Light/Dark theme selector to the dashboard.
+- [x] Verify Light and Dark modes visually.
+- [ ] Save the theme-update checkpoint.
+- [x] Prepare prioritized development feature recommendations.

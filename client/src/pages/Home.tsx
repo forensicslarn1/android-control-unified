@@ -3,6 +3,7 @@
  * every consequential activity gets an inspectable, local command receipt.
  */
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
 import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfile } from "@/lib/adbClient";
 import { COMMUNITY_SOURCE, fetchCommunityCatalog, type CommunityPackage } from "@/lib/communityCatalog";
 import AboutWorkspace from "@/components/AboutWorkspace";
@@ -27,6 +28,7 @@ import {
   Loader2,
   LockKeyhole,
   MonitorUp,
+  Moon,
   PackageOpen,
   PlugZap,
   RefreshCw,
@@ -38,6 +40,7 @@ import {
   Upload,
   Usb,
   UsersRound,
+  Sun,
   X,
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
@@ -115,6 +118,7 @@ function commandName(command: string) {
 
 export default function Home() {
   const adb = useRef(new BrowserAdbClient());
+  const { theme, toggleTheme } = useTheme();
   const [active, setActive] = useState<Workspace>("overview");
   const [device, setDevice] = useState<DeviceProfile | null>(null);
   const [connecting, setConnecting] = useState(false);
@@ -286,7 +290,7 @@ export default function Home() {
   };
 
   return (
-    <div dir={copy.direction} className="min-h-screen bg-[#f6f2ea] text-[#14253a] lg:grid lg:grid-cols-[230px_minmax(0,1fr)_330px]">
+    <div dir={copy.direction} className="app-workbench min-h-screen bg-[#f6f2ea] text-[#14253a] dark:bg-[#0e1d2c] dark:text-[#e7eef3] lg:grid lg:grid-cols-[230px_minmax(0,1fr)_330px]">
       <aside className="border-b border-[#2f4860] bg-[#14253a] text-[#f6f2ea] lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-3 border-b border-[#2f4860] px-5 py-5">
           <img src="/manus-storage/android-control-mark_bcf284ab.png" alt="Android Control Center signal bracket mark" className="h-14 w-14" />
@@ -309,6 +313,13 @@ export default function Home() {
           })}
         </nav>
         <div className="hidden px-5 lg:block lg:absolute lg:bottom-6">
+          <div className="mb-5 border-y border-[#2f4860] py-3">
+            <p className="kicker text-[#7f91a1]">Appearance</p>
+            <button onClick={() => toggleTheme?.()} className="action-button mt-2 flex w-full items-center justify-between border border-[#3d566e] bg-[#1b3048] px-2.5 py-2 text-xs text-[#f6f2ea] hover:border-[#c8f04a]" aria-label={`Switch to ${theme === "dark" ? "Light" : "Dark"} theme`}>
+              <span className="flex items-center gap-2">{theme === "dark" ? <Sun size={14} className="text-[#c8f04a]" /> : <Moon size={14} className="text-[#c8f04a]" />}{theme === "dark" ? "Dark" : "Light"}</span>
+              <span className="mono text-[0.6rem] text-[#a6b3be]">change</span>
+            </button>
+          </div>
           <div className="mb-5 border-y border-[#2f4860] py-3">
             <label className="kicker flex items-center gap-2 text-[#7f91a1]" htmlFor="language-choice"><Languages size={13} /> {copy.language}</label>
             <select id="language-choice" value={language} onChange={(event) => changeLanguage(event.target.value as InterfaceLanguage)} className="mono mt-2 h-9 w-full border border-[#3d566e] bg-[#1b3048] px-2 text-xs text-[#f6f2ea] outline-none focus:border-[#c8f04a]">
@@ -337,7 +348,7 @@ export default function Home() {
           <section className="space-y-6">
             <div className="relative overflow-hidden border border-[#d8d1c4] bg-[#fffdf8]">
               <img src="/manus-storage/android-control-hero_a3d76729.jpg" alt="Android phone on a service workbench" className="absolute inset-y-0 right-0 h-full w-[56%] object-cover object-right opacity-90" />
-              <div className="absolute inset-y-0 right-0 w-[68%] bg-gradient-to-r from-[#fffdf8] via-[#fffdf8]/80 to-transparent" />
+              <div className="absolute inset-y-0 right-0 w-[68%] bg-gradient-to-r from-[#fffdf8] via-[#fffdf8]/80 to-transparent dark:from-[#14253a] dark:via-[#14253a]/88" />
               <div className="relative max-w-2xl p-6 sm:p-8">
                 <div className="flex flex-wrap items-center gap-2"><span className={`status-stamp ${isLive ? "text-[#527321]" : "text-[#687584]"}`}>{isLive ? "device live" : "session idle"}</span><span className="status-stamp text-[#59869c]">usb authority</span><span className="status-stamp text-[#687584]">local only</span></div>
                 <p className="kicker mt-5 text-[#687584]">Service desk / handoff required</p>

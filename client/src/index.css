@@ -56,6 +56,26 @@
   --ring: #c8f04a;
 }
 
+.dark {
+  --primary: #c8f04a;
+  --primary-foreground: #14253a;
+  --background: #0e1d2c;
+  --foreground: #e7eef3;
+  --card: #14253a;
+  --card-foreground: #e7eef3;
+  --popover: #14253a;
+  --popover-foreground: #e7eef3;
+  --secondary: #1b3048;
+  --secondary-foreground: #d7e0e8;
+  --muted: #1b3048;
+  --muted-foreground: #a6b3be;
+  --accent: #293f22;
+  --accent-foreground: #e7eef3;
+  --border: #2f4860;
+  --input: #3d566e;
+  --ring: #c8f04a;
+}
+
 @layer base {
   * { @apply border-border outline-ring/50; }
   body {
@@ -63,6 +83,9 @@
     font-family: "Space Grotesk", sans-serif;
     background-image: linear-gradient(rgba(20, 37, 58, 0.026) 1px, transparent 1px), linear-gradient(90deg, rgba(20, 37, 58, 0.02) 1px, transparent 1px);
     background-size: 28px 28px;
+  }
+  .dark body {
+    background-image: linear-gradient(rgba(200, 240, 74, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(200, 240, 74, 0.025) 1px, transparent 1px);
   }
   button:not(:disabled), [role="button"]:not([aria-disabled="true"]), [type="button"]:not(:disabled), [type="submit"]:not(:disabled), [type="reset"]:not(:disabled), a[href], select:not(:disabled), input[type="checkbox"]:not(:disabled), input[type="radio"]:not(:disabled) { @apply cursor-pointer; }
 }
@@ -83,3 +106,17 @@
   @keyframes receipt-enter { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
   @media (prefers-reduced-motion: reduce) { .receipt-enter { animation: none; } }
 }
+
+/* Dark mode preserves the field-service contrast hierarchy while remapping the paper surfaces to midnight ink. */
+.dark .service-card { background: rgba(20, 37, 58, 0.94); border-color: #2f4860; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22); }
+.dark .app-workbench main [class*="bg-[#fffdf8]"] { background-color: #14253a !important; }
+.dark .app-workbench main [class*="bg-[#f3efe6]"], .dark .app-workbench main [class*="bg-[#eee9df]"] { background-color: #1b3048 !important; }
+.dark .app-workbench main [class*="bg-[#fff2e1]"] { background-color: #322821 !important; }
+.dark .app-workbench main [class*="bg-[#e6f4bb]"] { background-color: #293f22 !important; }
+.dark .app-workbench main [class*="border-[#d8d1c4]"], .dark .app-workbench main [class*="border-[#e3dcd0]"], .dark .app-workbench main [class*="border-[#eee8dc]"] { border-color: #2f4860 !important; }
+.dark .app-workbench main [class*="text-[#14253a]"] { color: #f6f2ea !important; }
+.dark .app-workbench main [class*="text-[#526273]"] { color: #c7d3dc !important; }
+.dark .app-workbench main [class*="text-[#687584]"] { color: #a6b3be !important; }
+.dark .app-workbench main [class*="text-[#6d5133]"] { color: #f0d4a8 !important; }
+.dark .app-workbench main input, .dark .app-workbench main select { background-color: #0e1d2c !important; color: #e7eef3 !important; border-color: #3d566e !important; }
+.dark .app-workbench main ::placeholder { color: #8e9eae; }
