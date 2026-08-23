@@ -26,3 +26,8 @@
 - [x] Run full project validation and repair any defects found.
 - [x] Verify Arabic translations, receipt filters, tags, and protected export.
 - [ ] Save the final localization and secure-archive checkpoint.
+- [x] Add in-app encrypted archive import and password-based receipt recovery.
+- [x] Add local APK certificate and permission inspection before installation.
+- [x] Add browser-local saved receipt-filter presets.
+- [x] Validate recovery, APK inspection, presets, and project quality.
+- [ ] Save the secure recovery and APK inspection checkpoint.

@@ -9,6 +9,7 @@ import { COMMUNITY_SOURCE, fetchCommunityCatalog, type CommunityPackage } from "
 import AboutWorkspace from "@/components/AboutWorkspace";
 import { LiveMirrorWorkspace, type MirrorState } from "@/components/LiveMirrorWorkspace";
 import { ReceiptHistoryWorkspace, type HistoryReceipt } from "@/components/ReceiptHistoryWorkspace";
+import { ApkInspectionWorkspace } from "@/components/ApkInspectionWorkspace";
 import {
   AppWindow,
   ArrowRight,
@@ -136,6 +137,19 @@ function bytesToBase64(bytes: Uint8Array) {
   return btoa(binary);
 }
 
+function base64ToBytes(value: string) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+function isHistoryReceipt(value: unknown): value is HistoryReceipt {
+  if (!value || typeof value !== "object") return false;
+  const receipt = value as Partial<HistoryReceipt>;
+  return typeof receipt.label === "string" && typeof receipt.command === "string" && typeof receipt.stdout === "string" && typeof receipt.stderr === "string" && typeof receipt.exitCode === "number" && typeof receipt.at === "string" && (receipt.authority === "USB" || receipt.authority === "Root" || receipt.authority === "Browser");
+}
+
 export default function Home() {
   const adb = useRef(new BrowserAdbClient());
   const mirrorCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -254,6 +268,31 @@ export default function Home() {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     downloadLocal(`android-control-history-${stamp}.encrypted.json`, JSON.stringify(envelope, null, 2), "application/json");
     toast.success(language === "ar" ? "تم تصدير الأرشيف المشفر محلياً." : "Encrypted archive exported locally.");
+  };
+
+  const importProtectedHistory = async (file: File, password: string) => {
+    if (password.length < 10) throw new Error(language === "ar" ? "استخدم كلمة مرور من 10 أحرف على الأقل." : "Use a password with at least 10 characters.");
+    if (!globalThis.crypto?.subtle) throw new Error("Web Crypto is unavailable in this browser context.");
+    const envelope = JSON.parse(await file.text()) as { format?: string; version?: number; cipher?: string; kdf?: { name?: string; hash?: string; iterations?: number; salt?: string }; iv?: string; ciphertext?: string };
+    if (envelope.format !== "android-control-encrypted-history" || envelope.version !== 1 || envelope.cipher !== "AES-256-GCM" || envelope.kdf?.name !== "PBKDF2" || envelope.kdf.hash !== "SHA-256" || !envelope.kdf.iterations || !envelope.kdf.salt || !envelope.iv || !envelope.ciphertext) throw new Error(language === "ar" ? "هذا ليس أرشيف Android Control مشفراً متوافقاً." : "This is not a compatible Android Control encrypted archive.");
+    const encoder = new TextEncoder();
+    const material = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
+    const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: base64ToBytes(envelope.kdf.salt), iterations: envelope.kdf.iterations, hash: "SHA-256" }, material, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    let decoded: { receipts?: unknown[] };
+    try {
+      const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: base64ToBytes(envelope.iv) }, key, base64ToBytes(envelope.ciphertext));
+      decoded = JSON.parse(new TextDecoder().decode(plain)) as { receipts?: unknown[] };
+    } catch {
+      throw new Error(language === "ar" ? "تعذر فك تشفير الأرشيف. تحقق من كلمة المرور والملف." : "The archive could not be decrypted. Check the password and file.");
+    }
+    const recovered = (decoded.receipts || []).filter(isHistoryReceipt).slice(0, 240);
+    if (!recovered.length) throw new Error(language === "ar" ? "لا يحتوي الأرشيف على إيصالات قابلة للاستعادة." : "The archive contains no recoverable receipts.");
+    setReceiptHistory((current) => {
+      const records = new Map<string, HistoryReceipt>();
+      [...recovered, ...current].forEach((receipt) => records.set(`${receipt.at}-${receipt.command}-${receipt.label}`, receipt));
+      return Array.from(records.values()).sort((left, right) => new Date(right.at).getTime() - new Date(left.at).getTime()).slice(0, 240);
+    });
+    toast.success(language === "ar" ? `تمت استعادة ${recovered.length} إيصالاً محلياً.` : `${recovered.length} receipt(s) recovered locally.`);
   };
 
   const removeHistoryReceipt = (key: string) => {
@@ -569,9 +608,9 @@ export default function Home() {
         {active === "privacy" && <PrivacyWorkspace language={language} isLive={isLive} run={async (command, label) => { try { const result = await adb.current.run(command); addReceipt(result, label); toast.success(language === "ar" ? "اكتمل فحص الخصوصية." : "Privacy check completed."); } catch (error) { toast.error(error instanceof Error ? error.message : "Command could not run."); } }} />}
         {active === "mirror" && <LiveMirrorWorkspace language={language} isLive={isLive} state={mirrorState} canvasRef={mirrorCanvas} start={startLiveMirror} stop={stopLiveMirror} />}
         {active === "profiles" && <ProfilesWorkspace language={language} isLive={isLive} output={userOutput} refresh={async () => { try { const result = await adb.current.listUsers(); setUserOutput(result.stdout); addReceipt(result, language === "ar" ? "تم تحديث مستخدمي وملفات أندرويد" : "Refreshed Android users and profiles"); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to inspect profiles."); } }} />}
-        {active === "apk" && <ApkWorkspace language={language} isLive={isLive} install={installApk} />}
+        {active === "apk" && <ApkInspectionWorkspace language={language} isLive={isLive} install={installApk} />}
         {active === "files" && <FilesWorkspace language={language} isLive={isLive} path={filePath} setPath={setFilePath} files={files} loading={fileLoading} load={loadFiles} />}
-        {active === "history" && <ReceiptHistoryWorkspace language={language} history={receiptHistory} remove={removeHistoryReceipt} clear={clearReceiptHistory} updateTags={updateHistoryTags} exportHistory={exportHistory} protectHistory={protectHistory} />}
+        {active === "history" && <ReceiptHistoryWorkspace language={language} history={receiptHistory} remove={removeHistoryReceipt} clear={clearReceiptHistory} updateTags={updateHistoryTags} exportHistory={exportHistory} protectHistory={protectHistory} importHistory={importProtectedHistory} />}
         {active === "about" && <AboutWorkspace language={language} />}
 
         <section className="mt-7 border-t border-[#d8d1c4] pt-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="kicker text-[#687584]">{isArabic ? "تفاصيل المشغّل" : "Operator detail"}</p><span className="status-stamp text-[#59869c]">{isArabic ? "مسجل" : "logged"}</span></div><p className="mt-1 text-sm text-[#526273]">{isArabic ? "شغّل أمر shell مقصوداً. يُسجل كما هو ويستخدم تصحيح USB القياسي ما لم تكتب أمر su -c بنفسك." : "Run a deliberate shell command. It is logged as-is and uses standard USB debugging unless you write an `su -c` command yourself."}</p></div><div className="flex w-full max-w-xl gap-2"><input value={terminal} onChange={(event) => setTerminal(event.target.value)} onKeyDown={(event) => event.key === "Enter" && runTerminal()} placeholder="e.g. getprop ro.build.fingerprint" className="h-10 min-w-0 flex-1 border border-[#d8d1c4] bg-[#fffdf8] px-3 mono text-xs outline-none focus:border-[#14253a]" /><Button onClick={runTerminal} disabled={!isLive || terminalRunning} variant="outline" className="action-button border-[#14253a]">{terminalRunning ? <Loader2 className="animate-spin" size={16} /> : <TerminalSquare size={16} />}</Button></div></div></section>
