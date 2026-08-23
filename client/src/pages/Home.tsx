@@ -8,6 +8,7 @@ import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfi
 import { COMMUNITY_SOURCE, fetchCommunityCatalog, type CommunityPackage } from "@/lib/communityCatalog";
 import AboutWorkspace from "@/components/AboutWorkspace";
 import { LiveMirrorWorkspace, type MirrorState } from "@/components/LiveMirrorWorkspace";
+import { ReceiptHistoryWorkspace, type HistoryReceipt } from "@/components/ReceiptHistoryWorkspace";
 import {
   AppWindow,
   ArrowRight,
@@ -22,6 +23,7 @@ import {
   FileText,
   Folder,
   HardDrive,
+  History,
   HelpCircle,
   Info,
   Languages,
@@ -47,7 +49,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type Workspace = "overview" | "debloat" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "about";
+type Workspace = "overview" | "debloat" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "history" | "about";
 type InterfaceLanguage = "en" | "ar" | "other";
 type Receipt = CommandResult & { label: string; authority: "USB" | "Root" | "Browser"; restore?: string };
 
@@ -59,6 +61,7 @@ const nav: Array<{ id: Workspace; label: string; icon: typeof Smartphone }> = [
   { id: "profiles", label: "Work profiles", icon: UsersRound },
   { id: "apk", label: "APK desk", icon: FileArchive },
   { id: "files", label: "Files", icon: Folder },
+  { id: "history", label: "Receipt history", icon: History },
   { id: "about", label: "About", icon: Info },
 ];
 
@@ -67,7 +70,7 @@ const languageCopy = {
     direction: "ltr" as const,
     language: "Interface language",
     choices: { en: "English", ar: "العربية", other: "Other languages" },
-    nav: { overview: "Device desk", debloat: "Debloat", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", about: "About" },
+    nav: { overview: "Device desk", debloat: "Debloat", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", history: "Receipt history", about: "About" },
     ready: "ready",
     inspect: "Inspect first. Change only what you can explain.",
     about: "About Forensicslarn",
@@ -76,7 +79,7 @@ const languageCopy = {
     direction: "rtl" as const,
     language: "لغة الواجهة",
     choices: { en: "English", ar: "العربية", other: "لغات أخرى" },
-    nav: { overview: "لوحة الجهاز", debloat: "تنظيف التطبيقات", privacy: "الخصوصية", mirror: "نسخ الشاشة", profiles: "ملفات العمل", apk: "حزمة APK", files: "الملفات", about: "حول" },
+    nav: { overview: "لوحة الجهاز", debloat: "تنظيف التطبيقات", privacy: "الخصوصية", mirror: "نسخ الشاشة", profiles: "ملفات العمل", apk: "حزمة APK", files: "الملفات", history: "أرشيف الإيصالات", about: "حول" },
     ready: "جاهز",
     inspect: "افحص أولاً. غيّر فقط ما تستطيع شرحه.",
     about: "حول Forensicslarn",
@@ -85,7 +88,7 @@ const languageCopy = {
     direction: "ltr" as const,
     language: "Interface language",
     choices: { en: "English", ar: "العربية", other: "Other languages" },
-    nav: { overview: "Device desk", debloat: "Debloat", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", about: "About" },
+    nav: { overview: "Device desk", debloat: "Debloat", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", history: "Receipt history", about: "About" },
     ready: "ready",
     inspect: "Inspect first. Change only what you can explain.",
     about: "About Forensicslarn",
@@ -102,6 +105,8 @@ const initialReceipt: Receipt = {
   authority: "Browser",
 };
 
+const RECEIPT_HISTORY_KEY = "acc-receipt-history-v1";
+
 function shortTime(value: string) {
   return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(value));
 }
@@ -111,6 +116,14 @@ function levelTone(level: string) {
   if (level === "Advanced") return "text-[#8b5c1c] bg-[#fff0ce] border-[#e6c473]";
   if (level === "Expert") return "text-[#934639] bg-[#fbe5df] border-[#dba193]";
   return "text-[#697482] bg-[#eee9df] border-[#d8d1c4]";
+}
+
+function removalLabel(level: string, isArabic: boolean) {
+  if (!isArabic) return level;
+  if (level === "Recommended") return "موصى به";
+  if (level === "Advanced") return "متقدم";
+  if (level === "Expert") return "خبير";
+  return "غير مصنف";
 }
 
 function commandName(command: string) {
@@ -136,6 +149,14 @@ export default function Home() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [actionMode, setActionMode] = useState<"disable" | "uninstall">("disable");
   const [receipts, setReceipts] = useState<Receipt[]>([initialReceipt]);
+  const [receiptHistory, setReceiptHistory] = useState<HistoryReceipt[]>(() => {
+    try {
+      const saved = localStorage.getItem(RECEIPT_HISTORY_KEY);
+      return saved ? (JSON.parse(saved) as HistoryReceipt[]).slice(0, 240) : [];
+    } catch {
+      return [];
+    }
+  });
   const [files, setFiles] = useState<DeviceFile[]>([]);
   const [filePath, setFilePath] = useState("/sdcard/Download");
   const [fileLoading, setFileLoading] = useState(false);
@@ -161,7 +182,9 @@ export default function Home() {
   );
 
   const addReceipt = (result: CommandResult, label: string, authority: Receipt["authority"] = "USB", restore?: string) => {
-    setReceipts((current) => [{ ...result, label, authority, restore }, ...current].slice(0, 60));
+    const receipt = { ...result, label, authority, restore };
+    setReceipts((current) => [receipt, ...current].slice(0, 60));
+    setReceiptHistory((current) => [receipt, ...current].slice(0, 240));
   };
 
   const downloadLocal = (filename: string, contents: string, type: string) => {
@@ -195,6 +218,26 @@ export default function Home() {
     const script = ["#!/usr/bin/env sh", "# Generated locally by Android Control Center.", "# Review every line before executing against a connected Android device.", "set -eu", "", "adb wait-for-device", "", ...restoreItems.flatMap((receipt) => [`# ${receipt.label}`, `adb shell ${receipt.restore}`, ""])].join("\n");
     downloadLocal(`${safeName}.sh`, script, "text/x-shellscript");
     toast.success("Recovery script saved locally. Review it before running.");
+  };
+
+  const exportHistory = (format: "json" | "md") => {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    if (format === "json") {
+      downloadLocal(`android-control-history-${stamp}.json`, JSON.stringify({ exportedAt: new Date().toISOString(), receipts: receiptHistory }, null, 2), "application/json");
+    } else {
+      const report = [`# Android Control Center — Receipt History`, "", `Exported: ${new Date().toISOString()}`, "", ...receiptHistory.flatMap((receipt, index) => [`## ${index + 1}. ${receipt.label}`, "", `- **Authority:** ${receipt.authority}`, `- **Time:** ${receipt.at}`, `- **Command:** \`${receipt.command}\``, `- **Exit code:** ${receipt.exitCode}`, `- **Output:** ${receipt.stderr || receipt.stdout || "(none)"}`, receipt.restore ? `- **Restore:** \`${receipt.restore}\`` : "", ""])].join("\n");
+      downloadLocal(`android-control-history-${stamp}.md`, report, "text/markdown");
+    }
+    toast.success(language === "ar" ? "تم حفظ تصدير الأرشيف محلياً." : "Receipt-history export saved locally.");
+  };
+
+  const removeHistoryReceipt = (key: string) => {
+    setReceiptHistory((current) => current.filter((receipt) => `${receipt.at}-${receipt.command}-${receipt.label}` !== key));
+  };
+
+  const clearReceiptHistory = () => {
+    setReceiptHistory([]);
+    toast.success(language === "ar" ? "تم مسح أرشيف الإيصالات المحلي." : "Local receipt history cleared.");
   };
 
   const inspectAfterConnect = async () => {
@@ -356,12 +399,25 @@ export default function Home() {
   const workspace = copy.nav[active];
   const isLive = Boolean(device);
   const isArabic = language === "ar";
+  const debloatCopy = isArabic ? {
+    context: "سياق المجتمع + الجرد المحلي", title: "ضع فقط التغييرات التي تفهمها في القائمة.", description: "تُطلب التعريفات من مستودع UAD-ng العام فقط عند اختيار التحديث. تبقى معرّفات الحزم المثبتة على هذا الجهاز. الإيقاف القابل للاستعادة للمستخدم 0 هو الخيار الآمن الافتراضي.", refresh: "تحديث القائمة", source: "المصدر:", notDownloaded: "لم يتم التنزيل", review: "مراجعة المصدر", connectTitle: "صِل جهازاً لمطابقة الحزم.", connectDetail: "يمكن تحديث قائمة المجتمع الآن، لكن مطابقة الحزم ووضعها في القائمة يتطلبان جرد أندرويد محلياً.", loadTitle: "حمّل تعريفات المجتمع لتصنيف هذا الجهاز.", loadDetail: "معرّفات الحزم المحلية جاهزة. يجري التحديث طلباً عاماً واحداً إلى GitHub ولا يرفع الجرد.", search: "ابحث في الحزم المطابقة", recommended: "عرض الموصى به فقط", package: "الحزمة", assessment: "تقييم المصدر", purpose: "الغرض والاعتماديات", restore: "استعادة", selected: "محدد", matched: "مطابق", only: "يبدأ الموصى به فقط مفعلاً.", disable: "إيقاف للمستخدم 0 (افتراضي)", uninstall: "إزالة للمستخدم 0 (متقدم)", reviewCommands: "مراجعة", commands: "أمر", descriptionSource: "وصف المصدر العام", neededBy: "تحتاجه", reviewRequired: "المراجعة مطلوبة", apply: "تطبيق الأوامر المراجعة", cancel: "إلغاء", risk: "استخدم على مسؤوليتك. يمكن لمصنّعي الأجهزة تقييد الحزم وتصنيف المجتمع ليس ضماناً. ستضاف النتائج ومحاولات الاستعادة إلى سجل الأوامر المحلي.",
+  } : {
+    context: "Community context + local inventory", title: "Queue only the changes you understand.", description: "Definitions are requested directly from the public UAD-ng repository only when you choose refresh. Installed package IDs remain on this device. The safe default is reversible disablement for User 0.", refresh: "Refresh list", source: "Source:", notDownloaded: "not downloaded", review: "review upstream", connectTitle: "Connect a device to match packages.", connectDetail: "The community list can be refreshed now, but package matching and queueing require a local Android inventory.", loadTitle: "Load community definitions to classify this device.", loadDetail: "local package IDs are ready. Refreshing makes one public GitHub request and does not upload the inventory.", search: "Search matched packages", recommended: "Show recommended only", package: "Package", assessment: "Upstream assessment", purpose: "Purpose & dependencies", restore: "Restore", selected: "selected", matched: "matched", only: "only Recommended starts enabled.", disable: "Disable for User 0 (default)", uninstall: "Remove for User 0 (advanced)", reviewCommands: "Review", commands: "command", descriptionSource: "Public-source description", neededBy: "needed by", reviewRequired: "Review required", apply: "Apply reviewed commands", cancel: "Cancel", risk: "Use at your own risk. Device makers can restrict packages and the community classification is not a warranty. Results and restore attempts will be added to the local command ledger.",
+  };
 
   useEffect(() => {
     document.documentElement.lang = language === "ar" ? "ar" : "en";
     document.documentElement.dir = languageCopy[language].direction;
     localStorage.setItem("acc-language", language);
   }, [language]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(RECEIPT_HISTORY_KEY, JSON.stringify(receiptHistory));
+    } catch {
+      toast.error(language === "ar" ? "تعذر حفظ أرشيف الإيصالات محلياً." : "Receipt history could not be saved locally.");
+    }
+  }, [receiptHistory, language]);
 
   const changeLanguage = (next: InterfaceLanguage) => {
     setLanguage(next);
@@ -468,24 +524,25 @@ export default function Home() {
 
         {active === "debloat" && (
           <section className="space-y-5">
-            <div className="service-card overflow-hidden"><div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:p-6"><div><p className="kicker text-[#687584]">Community context + local inventory</p><h2 className="mt-2 text-2xl font-bold tracking-[-0.04em]">Queue only the changes you understand.</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[#526273]">Definitions are requested directly from the public UAD-ng repository only when you choose refresh. Installed package IDs remain on this device. The safe default is reversible disablement for User 0.</p></div><div className="flex items-start gap-2"><Button variant="outline" onClick={refreshCatalog} disabled={catalogLoading} className="action-button border-[#14253a] bg-transparent text-[#14253a] hover:bg-[#e6f4bb]">{catalogLoading ? <Loader2 className="mr-2 animate-spin" size={15} /> : <RefreshCw className="mr-2" size={15} />}Refresh list</Button></div></div><div className="border-t border-[#d8d1c4] bg-[#f3efe6] px-5 py-3 text-xs text-[#687584] sm:px-6"><span className="mono">Source:</span> UAD-ng public data · {catalogTime ? `refreshed ${shortTime(catalogTime)}` : "not downloaded"} · <a href="https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation" target="_blank" className="underline underline-offset-4">review upstream</a></div></div>
+            <div className="service-card overflow-hidden"><div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:p-6"><div><p className="kicker text-[#687584]">{debloatCopy.context}</p><h2 className="mt-2 text-2xl font-bold tracking-[-0.04em]">{debloatCopy.title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[#526273]">{debloatCopy.description}</p></div><div className="flex items-start gap-2"><Button variant="outline" onClick={refreshCatalog} disabled={catalogLoading} className="action-button border-[#14253a] bg-transparent text-[#14253a] hover:bg-[#e6f4bb]">{catalogLoading ? <Loader2 className="mr-2 animate-spin" size={15} /> : <RefreshCw className="mr-2" size={15} />}{debloatCopy.refresh}</Button></div></div><div className="border-t border-[#d8d1c4] bg-[#f3efe6] px-5 py-3 text-xs text-[#687584] sm:px-6"><span className="mono">{debloatCopy.source}</span> UAD-ng public data · {catalogTime ? `${isArabic ? "تم التحديث" : "refreshed"} ${shortTime(catalogTime)}` : debloatCopy.notDownloaded} · <a href="https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation" target="_blank" className="underline underline-offset-4">{debloatCopy.review}</a></div></div>
 
-            {!isLive ? <EmptyState title="Connect a device to match packages." copy="The community list can be refreshed now, but package matching and queueing require a local Android inventory." action={connect} label="Connect & authorize" /> : !catalog.length ? <EmptyState title="Load community definitions to classify this device." copy={`${packages.length} local package IDs are ready. Refreshing makes one public GitHub request and does not upload the inventory.`} action={refreshCatalog} label="Refresh community list" /> : (
-              <div className="service-card overflow-hidden"><div className="flex flex-col gap-3 border-b border-[#d8d1c4] p-4 sm:flex-row sm:items-center sm:justify-between"><div className="relative max-w-sm flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#687584]" size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search matched packages" className="h-10 w-full border border-[#d8d1c4] bg-[#fffdf8] pl-9 pr-3 text-sm outline-none focus:border-[#14253a]" /></div><label className="flex items-center gap-2 text-xs text-[#526273]"><input type="checkbox" checked={recommendedOnly} onChange={(event) => setRecommendedOnly(event.target.checked)} className="accent-[#14253a]" /> Show recommended only</label></div>
-                <div className="max-h-[520px] overflow-auto"><table className="w-full min-w-[720px] text-left"><thead className="sticky top-0 bg-[#f3efe6] text-[0.64rem] uppercase tracking-[0.12em] text-[#687584]"><tr><th className="w-12 px-4 py-3"></th><th className="px-3 py-3">Package</th><th className="px-3 py-3">Upstream assessment</th><th className="px-3 py-3">Purpose & dependencies</th><th className="px-3 py-3"></th></tr></thead><tbody>{visiblePackages.slice(0, 120).map((item) => { const checked = selected.includes(item.id); return <tr key={item.id} className="border-t border-[#e5ded2] hover:bg-[#fbf8f1]"><td className="px-4 py-4"><input aria-label={`Queue ${item.id}`} type="checkbox" checked={checked} onChange={() => setSelected((current) => checked ? current.filter((id) => id !== item.id) : [...current, item.id])} className="h-4 w-4 accent-[#14253a]" /></td><td className="px-3 py-4"><p className="mono text-xs font-medium">{item.id}</p><p className="mt-1 text-xs text-[#687584]">{item.list} list</p></td><td className="px-3 py-4"><span className={`inline-flex border px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.08em] ${levelTone(item.removal)}`}>{item.removal}</span></td><td className="max-w-sm px-3 py-4"><p className="line-clamp-2 text-xs leading-5 text-[#526273]">{item.description}</p>{item.neededBy.length > 0 && <p className="mt-1 mono text-[0.65rem] text-[#934639]">needed by {item.neededBy.join(", ")}</p>}</td><td className="px-3 py-4"><button onClick={() => restore(item.id)} className="text-xs font-semibold underline underline-offset-4">Restore</button></td></tr>; })}</tbody></table></div>
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#d8d1c4] bg-[#f3efe6] px-4 py-3"><p className="text-xs text-[#526273]">{visiblePackages.length} matched · {selected.length} selected · only <strong>Recommended</strong> starts enabled.</p><div className="flex items-center gap-2"><select value={actionMode} onChange={(event) => setActionMode(event.target.value as typeof actionMode)} className="h-9 border border-[#d8d1c4] bg-[#fffdf8] px-2 text-xs"><option value="disable">Disable for User 0 (default)</option><option value="uninstall">Remove for User 0 (advanced)</option></select><Button onClick={() => setReviewOpen(true)} disabled={!selected.length} className="action-button bg-[#14253a] text-[#f6f2ea] hover:bg-[#223952]">Review {selected.length} command{selected.length === 1 ? "" : "s"}<ArrowRight className="ml-2" size={15} /></Button></div></div>
+            {!isLive ? <EmptyState title={debloatCopy.connectTitle} copy={debloatCopy.connectDetail} action={connect} label={isArabic ? "صِل وفوض" : "Connect & authorize"} /> : !catalog.length ? <EmptyState title={debloatCopy.loadTitle} copy={`${packages.length} ${debloatCopy.loadDetail}`} action={refreshCatalog} label={debloatCopy.refresh} /> : (
+              <div className="service-card overflow-hidden"><div className="flex flex-col gap-3 border-b border-[#d8d1c4] p-4 sm:flex-row sm:items-center sm:justify-between"><div className="relative max-w-sm flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#687584]" size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={debloatCopy.search} className="h-10 w-full border border-[#d8d1c4] bg-[#fffdf8] pl-9 pr-3 text-sm outline-none focus:border-[#14253a]" /></div><label className="flex items-center gap-2 text-xs text-[#526273]"><input type="checkbox" checked={recommendedOnly} onChange={(event) => setRecommendedOnly(event.target.checked)} className="accent-[#14253a]" /> {debloatCopy.recommended}</label></div>
+                <div className="max-h-[520px] overflow-auto"><table className="w-full min-w-[720px] text-left"><thead className="sticky top-0 bg-[#f3efe6] text-[0.64rem] uppercase tracking-[0.12em] text-[#687584]"><tr><th className="w-12 px-4 py-3"></th><th className="px-3 py-3">{debloatCopy.package}</th><th className="px-3 py-3">{debloatCopy.assessment}</th><th className="px-3 py-3">{debloatCopy.purpose}</th><th className="px-3 py-3"></th></tr></thead><tbody>{visiblePackages.slice(0, 120).map((item) => { const checked = selected.includes(item.id); return <tr key={item.id} className="border-t border-[#e5ded2] hover:bg-[#fbf8f1]"><td className="px-4 py-4"><input aria-label={`${debloatCopy.reviewCommands} ${item.id}`} type="checkbox" checked={checked} onChange={() => setSelected((current) => checked ? current.filter((id) => id !== item.id) : [...current, item.id])} className="h-4 w-4 accent-[#14253a]" /></td><td className="px-3 py-4"><p className="mono text-xs font-medium">{item.id}</p><p className="mt-1 text-xs text-[#687584]">{item.list} {isArabic ? "قائمة" : "list"}</p></td><td className="px-3 py-4"><span className={`inline-flex border px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.08em] ${levelTone(item.removal)}`}>{removalLabel(item.removal, isArabic)}</span></td><td className="max-w-sm px-3 py-4"><p className="kicker text-[0.55rem] text-[#687584]">{debloatCopy.descriptionSource}</p><p className="line-clamp-2 text-xs leading-5 text-[#526273]">{item.description}</p>{item.neededBy.length > 0 && <p className="mt-1 mono text-[0.65rem] text-[#934639]">{debloatCopy.neededBy} {item.neededBy.join(", ")}</p>}</td><td className="px-3 py-4"><button onClick={() => restore(item.id)} className="text-xs font-semibold underline underline-offset-4">{debloatCopy.restore}</button></td></tr>; })}</tbody></table></div>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#d8d1c4] bg-[#f3efe6] px-4 py-3"><p className="text-xs text-[#526273]">{visiblePackages.length} {debloatCopy.matched} · {selected.length} {debloatCopy.selected} · {debloatCopy.only}</p><div className="flex items-center gap-2"><select value={actionMode} onChange={(event) => setActionMode(event.target.value as typeof actionMode)} className="h-9 border border-[#d8d1c4] bg-[#fffdf8] px-2 text-xs"><option value="disable">{debloatCopy.disable}</option><option value="uninstall">{debloatCopy.uninstall}</option></select><Button onClick={() => setReviewOpen(true)} disabled={!selected.length} className="action-button bg-[#14253a] text-[#f6f2ea] hover:bg-[#223952]">{debloatCopy.reviewCommands} {selected.length} {debloatCopy.commands}<ArrowRight className="ml-2" size={15} /></Button></div></div>
               </div>
             )}
 
-            {reviewOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-[#14253a]/45 p-4"><div className="w-full max-w-2xl border border-[#14253a] bg-[#fffdf8] shadow-2xl"><div className="flex items-start justify-between border-b border-[#d8d1c4] p-5"><div><p className="kicker text-[#934639]">Review required</p><h3 className="mt-1 text-xl font-bold tracking-[-0.04em]">{actionMode === "disable" ? "Disable" : "Remove"} {selected.length} package{selected.length === 1 ? "" : "s"} for User 0</h3></div><button onClick={() => setReviewOpen(false)} className="p-1"><X size={19} /></button></div><div className="max-h-[48vh] space-y-2 overflow-auto p-5">{selected.map((id) => <div className="border border-[#d8d1c4] p-3" key={id}><p className="mono text-xs">{actionMode === "disable" ? `pm disable-user --user 0 ${id}` : `pm uninstall -k --user 0 ${id}`}</p><p className="mt-2 mono text-[0.65rem] text-[#687584]">restore: cmd package install-existing --user 0 {id}</p></div>)}</div><div className="border-t border-[#d8d1c4] bg-[#fff2e1] p-5"><div className="flex gap-3"><CircleAlert size={18} className="mt-0.5 shrink-0 text-[#934639]" /><p className="text-xs leading-5 text-[#6d3d35]">Use at your own risk. Device makers can restrict packages and the community classification is not a warranty. Results and restore attempts will be added to the local command ledger.</p></div><div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => setReviewOpen(false)}>Cancel</Button><Button onClick={runQueued} className="action-button bg-[#14253a] text-[#f6f2ea]">Apply reviewed commands</Button></div></div></div></div>}
+            {reviewOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-[#14253a]/45 p-4"><div className="w-full max-w-2xl border border-[#14253a] bg-[#fffdf8] shadow-2xl"><div className="flex items-start justify-between border-b border-[#d8d1c4] p-5"><div><p className="kicker text-[#934639]">{debloatCopy.reviewRequired}</p><h3 className="mt-1 text-xl font-bold tracking-[-0.04em]">{actionMode === "disable" ? debloatCopy.disable : debloatCopy.uninstall} · {selected.length} {debloatCopy.package}</h3></div><button onClick={() => setReviewOpen(false)} className="p-1"><X size={19} /></button></div><div className="max-h-[48vh] space-y-2 overflow-auto p-5">{selected.map((id) => <div className="border border-[#d8d1c4] p-3" key={id}><p className="mono text-xs">{actionMode === "disable" ? `pm disable-user --user 0 ${id}` : `pm uninstall -k --user 0 ${id}`}</p><p className="mt-2 mono text-[0.65rem] text-[#687584]">{debloatCopy.restore}: cmd package install-existing --user 0 {id}</p></div>)}</div><div className="border-t border-[#d8d1c4] bg-[#fff2e1] p-5"><div className="flex gap-3"><CircleAlert size={18} className="mt-0.5 shrink-0 text-[#934639]" /><p className="text-xs leading-5 text-[#6d3d35]">{debloatCopy.risk}</p></div><div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => setReviewOpen(false)}>{debloatCopy.cancel}</Button><Button onClick={runQueued} className="action-button bg-[#14253a] text-[#f6f2ea]">{debloatCopy.apply}</Button></div></div></div></div>}
           </section>
         )}
 
-        {active === "privacy" && <PrivacyWorkspace isLive={isLive} run={async (command, label) => { try { const result = await adb.current.run(command); addReceipt(result, label); toast.success("Privacy check completed."); } catch (error) { toast.error(error instanceof Error ? error.message : "Command could not run."); } }} />}
+        {active === "privacy" && <PrivacyWorkspace language={language} isLive={isLive} run={async (command, label) => { try { const result = await adb.current.run(command); addReceipt(result, label); toast.success(language === "ar" ? "اكتمل فحص الخصوصية." : "Privacy check completed."); } catch (error) { toast.error(error instanceof Error ? error.message : "Command could not run."); } }} />}
         {active === "mirror" && <LiveMirrorWorkspace language={language} isLive={isLive} state={mirrorState} canvasRef={mirrorCanvas} start={startLiveMirror} stop={stopLiveMirror} />}
         {active === "profiles" && <ProfilesWorkspace isLive={isLive} output={userOutput} refresh={async () => { try { const result = await adb.current.listUsers(); setUserOutput(result.stdout); addReceipt(result, "Refreshed Android users and profiles"); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to inspect profiles."); } }} />}
         {active === "apk" && <ApkWorkspace isLive={isLive} install={installApk} />}
         {active === "files" && <FilesWorkspace isLive={isLive} path={filePath} setPath={setFilePath} files={files} loading={fileLoading} load={loadFiles} />}
+        {active === "history" && <ReceiptHistoryWorkspace language={language} history={receiptHistory} remove={removeHistoryReceipt} clear={clearReceiptHistory} exportHistory={exportHistory} />}
         {active === "about" && <AboutWorkspace language={language} />}
 
         <section className="mt-7 border-t border-[#d8d1c4] pt-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="kicker text-[#687584]">{isArabic ? "تفاصيل المشغّل" : "Operator detail"}</p><span className="status-stamp text-[#59869c]">{isArabic ? "مسجل" : "logged"}</span></div><p className="mt-1 text-sm text-[#526273]">{isArabic ? "شغّل أمر shell مقصوداً. يُسجل كما هو ويستخدم تصحيح USB القياسي ما لم تكتب أمر su -c بنفسك." : "Run a deliberate shell command. It is logged as-is and uses standard USB debugging unless you write an `su -c` command yourself."}</p></div><div className="flex w-full max-w-xl gap-2"><input value={terminal} onChange={(event) => setTerminal(event.target.value)} onKeyDown={(event) => event.key === "Enter" && runTerminal()} placeholder="e.g. getprop ro.build.fingerprint" className="h-10 min-w-0 flex-1 border border-[#d8d1c4] bg-[#fffdf8] px-3 mono text-xs outline-none focus:border-[#14253a]" /><Button onClick={runTerminal} disabled={!isLive || terminalRunning} variant="outline" className="action-button border-[#14253a]">{terminalRunning ? <Loader2 className="animate-spin" size={16} /> : <TerminalSquare size={16} />}</Button></div></div></section>
@@ -504,14 +561,20 @@ function EmptyState({ title, copy, action, label }: { title: string; copy: strin
   return <div className="service-card p-8 text-center"><HardDrive className="mx-auto text-[#59869c]" size={27} /><h3 className="mt-4 text-xl font-bold tracking-[-0.04em]">{title}</h3><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#526273]">{copy}</p><Button onClick={action} className="action-button mt-5 bg-[#14253a] text-[#f6f2ea] hover:bg-[#223952]">{label}<ChevronRight className="ml-1" size={16} /></Button></div>;
 }
 
-function PrivacyWorkspace({ isLive, run }: { isLive: boolean; run: (command: string, label: string) => Promise<void> }) {
-  const actions = [
+function PrivacyWorkspace({ language, isLive, run }: { language: InterfaceLanguage; isLive: boolean; run: (command: string, label: string) => Promise<void> }) {
+  const isArabic = language === "ar";
+  const actions = isArabic ? [
+    ["مراجعة حالة الموقع", "settings get secure location_mode", "للقراءة فقط · قد يقيّد أندرويد الإجابة"],
+    ["مراجعة DNS الخاص", "settings get global private_dns_mode && settings get global private_dns_specifier", "للقراءة فقط · يتحقق من سياسة DNS الحالية"],
+    ["مراجعة ADB عبر الشبكة", "getprop service.adb.tcp.port", "للقراءة فقط · يكشف منفذ تصحيح يستمع"],
+    ["عرض منح أذونات وقت التشغيل", "dumpsys package packages | grep -E 'granted=true|granted=true' | head -120", "قراءة متقدمة فقط · تختلف النتائج باختلاف إصدار أندرويد"],
+  ] : [
     ["Review location state", "settings get secure location_mode", "Read-only · Android may restrict the answer"],
     ["Review private DNS", "settings get global private_dns_mode && settings get global private_dns_specifier", "Read-only · verifies current DNS policy"],
     ["Review ADB over network", "getprop service.adb.tcp.port", "Read-only · detects a listening debug port"],
     ["List runtime permission grants", "dumpsys package packages | grep -E 'granted=true|granted=true' | head -120", "Advanced read-only · output varies by Android version"],
   ];
-  return <section className="space-y-5"><div className="relative overflow-hidden border border-[#d8d1c4] bg-[#fffdf8]"><img src="/manus-storage/privacy-workstation_68e7bcbd.jpg" alt="Privacy workstation" className="absolute right-0 top-0 h-full w-48 object-cover opacity-70 sm:w-72" /><div className="relative max-w-2xl p-6 sm:p-7"><p className="kicker text-[#687584]">Review before toggle</p><h2 className="mt-2 text-3xl font-bold tracking-[-0.05em]">Privacy controls need device context.</h2><p className="mt-3 text-sm leading-6 text-[#526273]">This workstation begins with read-only checks. Android settings are vendor- and policy-dependent, so the desk shows the exact result before presenting a change path.</p></div></div><div className="grid gap-4 md:grid-cols-2">{actions.map(([label, command, note]) => <div className="service-card p-5" key={label}><div className="flex items-start justify-between"><ShieldCheck size={18} className="text-[#59869c]" /><span className="status-stamp text-[#687584]">read</span></div><h3 className="mt-5 font-bold">{label}</h3><p className="mt-2 mono text-[0.68rem] leading-5 text-[#526273]">{command}</p><p className="mt-3 text-xs leading-5 text-[#687584]">{note}</p><Button variant="outline" disabled={!isLive} onClick={() => run(command, label)} className="action-button mt-5 border-[#14253a]">Run check <ArrowRight className="ml-2" size={15} /></Button></div>)}</div><div className="border-l-2 border-[#d39152] bg-[#fff2e1] p-4 text-sm leading-6 text-[#6d5133]"><strong>Why no universal toggle list?</strong> Android settings commands can be rejected by system policy, apply differently by version, or carry an unexpected device-wide effect. The normal workflow inspects first, then exposes a specific command only when you understand the phone’s current result.</div></section>;
+  return <section className="space-y-5"><div className="relative overflow-hidden border border-[#d8d1c4] bg-[#fffdf8]"><img src="/manus-storage/privacy-workstation_68e7bcbd.jpg" alt="Privacy workstation" className="absolute right-0 top-0 h-full w-48 object-cover opacity-70 sm:w-72" /><div className="relative max-w-2xl p-6 sm:p-7"><p className="kicker text-[#687584]">{isArabic ? "راجع قبل التغيير" : "Review before toggle"}</p><h2 className="mt-2 text-3xl font-bold tracking-[-0.05em]">{isArabic ? "تحتاج أدوات الخصوصية إلى سياق الجهاز." : "Privacy controls need device context."}</h2><p className="mt-3 text-sm leading-6 text-[#526273]">{isArabic ? "تبدأ هذه المحطة بفحوصات للقراءة فقط. تعتمد إعدادات أندرويد على الشركة والسياسة، لذلك تعرض اللوحة النتيجة الدقيقة قبل اقتراح مسار تغيير." : "This workstation begins with read-only checks. Android settings are vendor- and policy-dependent, so the desk shows the exact result before presenting a change path."}</p></div></div><div className="grid gap-4 md:grid-cols-2">{actions.map(([label, command, note]) => <div className="service-card p-5" key={label}><div className="flex items-start justify-between"><ShieldCheck size={18} className="text-[#59869c]" /><span className="status-stamp text-[#687584]">{isArabic ? "قراءة" : "read"}</span></div><h3 className="mt-5 font-bold">{label}</h3><p className="mt-2 mono text-[0.68rem] leading-5 text-[#526273]">{command}</p><p className="mt-3 text-xs leading-5 text-[#687584]">{note}</p><Button variant="outline" disabled={!isLive} onClick={() => run(command, label)} className="action-button mt-5 border-[#14253a]">{isArabic ? "تشغيل الفحص" : "Run check"} <ArrowRight className="ml-2" size={15} /></Button></div>)}</div><div className="border-l-2 border-[#d39152] bg-[#fff2e1] p-4 text-sm leading-6 text-[#6d5133]"><strong>{isArabic ? "لماذا لا توجد قائمة تغييرات عامة؟" : "Why no universal toggle list?"}</strong> {isArabic ? "قد ترفض سياسة النظام أوامر إعدادات أندرويد، أو تطبقها بطريقة مختلفة حسب الإصدار، أو ينتج عنها أثر غير متوقع على الجهاز. تفحص اللوحة أولاً ثم تعرض أمراً محدداً فقط عندما تفهم النتيجة الحالية للهاتف." : "Android settings commands can be rejected by system policy, apply differently by version, or carry an unexpected device-wide effect. The normal workflow inspects first, then exposes a specific command only when you understand the phone’s current result."}</div></section>;
 }
 
 function MirrorWorkspace({ isLive }: { isLive: boolean }) {

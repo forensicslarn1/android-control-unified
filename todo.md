@@ -15,3 +15,8 @@
 - [x] Implement Scrcpy live mirroring with start and stop session receipts.
 - [x] Verify localization, export, recovery, and mirroring flows.
 - [ ] Save the completed capabilities checkpoint.
+- [x] Add a local receipt-history browser with search, filters, review, and clear controls.
+- [x] Persist receipt history only in browser-local storage.
+- [x] Complete Arabic translations for package and privacy workflows.
+- [x] Verify receipt-history management and bilingual workspaces.
+- [ ] Save the receipt-history and Arabic localization checkpoint.
