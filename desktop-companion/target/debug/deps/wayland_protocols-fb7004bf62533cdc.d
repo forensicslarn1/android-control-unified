@@ -1,0 +1,10 @@
+/home/ubuntu/android-control-unified/desktop-companion/target/debug/deps/wayland_protocols-fb7004bf62533cdc.d: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/protocol_macro.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/ext.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/wp.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/xdg.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/xwayland.rs
+
+/home/ubuntu/android-control-unified/desktop-companion/target/debug/deps/libwayland_protocols-fb7004bf62533cdc.rmeta: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/protocol_macro.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/ext.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/wp.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/xdg.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/xwayland.rs
+
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/lib.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/protocol_macro.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/ext.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/wp.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/xdg.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.13/src/xwayland.rs:

@@ -1,0 +1,10 @@
+/home/ubuntu/android-control-unified/desktop-companion/target/debug/deps/zvariant_derive-1f7007b885d0f4d8.d: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/dict.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/type.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/utils.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/value.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/../README.md
+
+/home/ubuntu/android-control-unified/desktop-companion/target/debug/deps/libzvariant_derive-1f7007b885d0f4d8.so: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/dict.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/type.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/utils.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/value.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/../README.md
+
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/lib.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/dict.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/type.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/utils.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/value.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zvariant_derive-3.15.2/src/../README.md:

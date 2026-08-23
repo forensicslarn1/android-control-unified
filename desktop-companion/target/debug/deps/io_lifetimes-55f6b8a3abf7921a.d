@@ -1,0 +1,10 @@
+/home/ubuntu/android-control-unified/desktop-companion/target/debug/deps/io_lifetimes-55f6b8a3abf7921a.d: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/portability.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/traits.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/example_ffi.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/raw.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/views.rs
+
+/home/ubuntu/android-control-unified/desktop-companion/target/debug/deps/libio_lifetimes-55f6b8a3abf7921a.rmeta: /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/lib.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/portability.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/traits.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/example_ffi.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/raw.rs /home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/views.rs
+
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/lib.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/portability.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/traits.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/example_ffi.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/raw.rs:
+/home/ubuntu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/io-lifetimes-1.0.11/src/views.rs:
