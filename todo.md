@@ -20,3 +20,9 @@
 - [x] Complete Arabic translations for package and privacy workflows.
 - [x] Verify receipt-history management and bilingual workspaces.
 - [ ] Save the receipt-history and Arabic localization checkpoint.
+- [x] Translate APK, file-management, and work-profile workspaces into Arabic.
+- [x] Add receipt time-range filtering and custom tags.
+- [x] Add password-protected local receipt-archive export.
+- [x] Run full project validation and repair any defects found.
+- [x] Verify Arabic translations, receipt filters, tags, and protected export.
+- [ ] Save the final localization and secure-archive checkpoint.
