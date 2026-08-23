@@ -9,3 +9,9 @@
 - [x] Verify Light and Dark modes visually.
 - [ ] Save the theme-update checkpoint.
 - [x] Prepare prioritized development feature recommendations.
+- [x] Complete Arabic and English translation coverage across dashboard workspaces.
+- [x] Add local command-receipt export.
+- [x] Add local package-recovery script generation.
+- [x] Implement Scrcpy live mirroring with start and stop session receipts.
+- [x] Verify localization, export, recovery, and mirroring flows.
+- [ ] Save the completed capabilities checkpoint.

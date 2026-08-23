@@ -4,9 +4,10 @@
  */
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
-import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfile } from "@/lib/adbClient";
+import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfile, type MirrorSession } from "@/lib/adbClient";
 import { COMMUNITY_SOURCE, fetchCommunityCatalog, type CommunityPackage } from "@/lib/communityCatalog";
 import AboutWorkspace from "@/components/AboutWorkspace";
+import { LiveMirrorWorkspace, type MirrorState } from "@/components/LiveMirrorWorkspace";
 import {
   AppWindow,
   ArrowRight,
@@ -43,7 +44,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type Workspace = "overview" | "debloat" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "about";
@@ -118,6 +119,8 @@ function commandName(command: string) {
 
 export default function Home() {
   const adb = useRef(new BrowserAdbClient());
+  const mirrorCanvas = useRef<HTMLCanvasElement | null>(null);
+  const mirrorSession = useRef<MirrorSession | null>(null);
   const { theme, toggleTheme } = useTheme();
   const [active, setActive] = useState<Workspace>("overview");
   const [device, setDevice] = useState<DeviceProfile | null>(null);
@@ -139,7 +142,9 @@ export default function Home() {
   const [userOutput, setUserOutput] = useState("");
   const [terminal, setTerminal] = useState("");
   const [terminalRunning, setTerminalRunning] = useState(false);
-  const [language, setLanguage] = useState<InterfaceLanguage>("en");
+  const [language, setLanguage] = useState<InterfaceLanguage>(() => (localStorage.getItem("acc-language") as InterfaceLanguage) || "en");
+  const [mirrorState, setMirrorState] = useState<MirrorState>({ phase: "idle", detail: "Connect and authorize a device, then start an explicit local Scrcpy session." });
+  const [recoveryScriptName, setRecoveryScriptName] = useState("android-control-recovery");
 
   const mappedPackages = useMemo(() => {
     const mapped = new Map(catalog.map((item) => [item.id, item]));
@@ -157,6 +162,39 @@ export default function Home() {
 
   const addReceipt = (result: CommandResult, label: string, authority: Receipt["authority"] = "USB", restore?: string) => {
     setReceipts((current) => [{ ...result, label, authority, restore }, ...current].slice(0, 60));
+  };
+
+  const downloadLocal = (filename: string, contents: string, type: string) => {
+    const blob = new Blob([contents], { type });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 500);
+  };
+
+  const exportReceipts = (format: "json" | "md") => {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    if (format === "json") {
+      downloadLocal(`android-control-receipts-${stamp}.json`, JSON.stringify({ exportedAt: new Date().toISOString(), receipts }, null, 2), "application/json");
+    } else {
+      const report = [`# Android Control Center — Command Receipts`, "", `Exported: ${new Date().toISOString()}`, "", ...receipts.flatMap((receipt, index) => [`## ${index + 1}. ${receipt.label}`, "", `- **Authority:** ${receipt.authority}`, `- **Time:** ${receipt.at}`, `- **Command:** \`${receipt.command}\``, `- **Exit code:** ${receipt.exitCode}`, `- **Output:** ${receipt.stderr || receipt.stdout || "(none)"}`, receipt.restore ? `- **Restore:** \`${receipt.restore}\`` : "", ""])].join("\n");
+      downloadLocal(`android-control-receipts-${stamp}.md`, report, "text/markdown");
+    }
+    toast.success("Receipt export saved locally.");
+  };
+
+  const exportRecoveryScript = () => {
+    const restoreItems = receipts.filter((receipt) => receipt.restore);
+    if (!restoreItems.length) {
+      toast.error("There are no recorded package restoration commands yet.");
+      return;
+    }
+    const safeName = recoveryScriptName.trim().replace(/[^A-Za-z0-9._-]/g, "-") || "android-control-recovery";
+    const script = ["#!/usr/bin/env sh", "# Generated locally by Android Control Center.", "# Review every line before executing against a connected Android device.", "set -eu", "", "adb wait-for-device", "", ...restoreItems.flatMap((receipt) => [`# ${receipt.label}`, `adb shell ${receipt.restore}`, ""])].join("\n");
+    downloadLocal(`${safeName}.sh`, script, "text/x-shellscript");
+    toast.success("Recovery script saved locally. Review it before running.");
   };
 
   const inspectAfterConnect = async () => {
@@ -278,14 +316,55 @@ export default function Home() {
     }
   };
 
+  const startLiveMirror = async () => {
+    if (!mirrorCanvas.current) return;
+    setMirrorState({ phase: "starting", detail: "Pushing the managed Scrcpy server and negotiating a local H.264 stream…" });
+    try {
+      const session = await adb.current.startMirror(mirrorCanvas.current);
+      mirrorSession.current = session;
+      setMirrorState({ phase: "live", detail: "Scrcpy is rendering the connected device locally in this browser.", width: session.width, height: session.height, codec: session.codec });
+      addReceipt({ command: "adb sync.push → /data/local/tmp/scrcpy-server.jar", stdout: "Managed Scrcpy 2.1 server transferred to authorized device.", stderr: "", exitCode: 0, at: new Date().toISOString() }, "Scrcpy server prepared", "USB");
+      addReceipt({ command: "scrcpy-server 2.1 → H.264 WebCodecs session", stdout: `Live mirror started at ${session.width}×${session.height}; codec ${session.codec}.`, stderr: "", exitCode: 0, at: new Date().toISOString() }, "Live mirror started", "USB");
+      toast.success("Live mirror started.");
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Scrcpy could not start.";
+      setMirrorState({ phase: "error", detail });
+      addReceipt({ command: "scrcpy start session", stdout: "", stderr: detail, exitCode: 1, at: new Date().toISOString() }, "Live mirror did not start", "USB");
+      toast.error(detail);
+    }
+  };
+
+  const stopLiveMirror = async () => {
+    const session = mirrorSession.current;
+    if (!session) return;
+    setMirrorState((current) => ({ ...current, phase: "stopping", detail: "Closing the local Scrcpy tunnel and decoder…" }));
+    try {
+      await session.stop();
+      mirrorSession.current = null;
+      setMirrorState({ phase: "idle", detail: "Mirror session stopped. The device display is no longer streamed to this browser." });
+      addReceipt({ command: "scrcpy session close", stdout: "Scrcpy control and media streams closed locally.", stderr: "", exitCode: 0, at: new Date().toISOString() }, "Live mirror stopped", "USB");
+      toast.success("Live mirror stopped.");
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Mirror stop did not finish cleanly.";
+      setMirrorState({ phase: "error", detail });
+      addReceipt({ command: "scrcpy session close", stdout: "", stderr: detail, exitCode: 1, at: new Date().toISOString() }, "Mirror stop returned an error", "USB");
+      toast.error(detail);
+    }
+  };
+
   const copy = languageCopy[language];
   const workspace = copy.nav[active];
   const isLive = Boolean(device);
+  const isArabic = language === "ar";
+
+  useEffect(() => {
+    document.documentElement.lang = language === "ar" ? "ar" : "en";
+    document.documentElement.dir = languageCopy[language].direction;
+    localStorage.setItem("acc-language", language);
+  }, [language]);
 
   const changeLanguage = (next: InterfaceLanguage) => {
     setLanguage(next);
-    document.documentElement.lang = next === "ar" ? "ar" : "en";
-    document.documentElement.dir = languageCopy[next].direction;
     toast.message(next === "ar" ? "تم تفعيل وضع العربية." : next === "other" ? "More language packs are being prepared." : "English interface selected.");
   };
 
@@ -314,10 +393,10 @@ export default function Home() {
         </nav>
         <div className="hidden px-5 lg:block lg:absolute lg:bottom-6">
           <div className="mb-5 border-y border-[#2f4860] py-3">
-            <p className="kicker text-[#7f91a1]">Appearance</p>
+            <p className="kicker text-[#7f91a1]">{isArabic ? "المظهر" : "Appearance"}</p>
             <button onClick={() => toggleTheme?.()} className="action-button mt-2 flex w-full items-center justify-between border border-[#3d566e] bg-[#1b3048] px-2.5 py-2 text-xs text-[#f6f2ea] hover:border-[#c8f04a]" aria-label={`Switch to ${theme === "dark" ? "Light" : "Dark"} theme`}>
-              <span className="flex items-center gap-2">{theme === "dark" ? <Sun size={14} className="text-[#c8f04a]" /> : <Moon size={14} className="text-[#c8f04a]" />}{theme === "dark" ? "Dark" : "Light"}</span>
-              <span className="mono text-[0.6rem] text-[#a6b3be]">change</span>
+              <span className="flex items-center gap-2">{theme === "dark" ? <Sun size={14} className="text-[#c8f04a]" /> : <Moon size={14} className="text-[#c8f04a]" />}{theme === "dark" ? (isArabic ? "داكن" : "Dark") : (isArabic ? "فاتح" : "Light")}</span>
+              <span className="mono text-[0.6rem] text-[#a6b3be]">{isArabic ? "تغيير" : "change"}</span>
             </button>
           </div>
           <div className="mb-5 border-y border-[#2f4860] py-3">
@@ -329,16 +408,16 @@ export default function Home() {
             </select>
             {language === "other" && <p className="mt-2 text-[0.63rem] leading-4 text-[#8e9eae]">Select English or Arabic today; additional language packs are being prepared.</p>}
           </div>
-          <p className="kicker text-[#7f91a1]">Transport</p>
-          <div className="mt-2 flex items-center gap-2 text-xs text-[#cdd7df]"><Usb size={14} className={isLive ? "text-[#c8f04a]" : "text-[#7f91a1]"} /> {isLive ? "USB Debugging authorized" : "Awaiting authorization"}</div>
-          <p className="mt-2 text-xs leading-5 text-[#8e9eae]">All work stays on this device and in this browser.</p>
+          <p className="kicker text-[#7f91a1]">{isArabic ? "النقل" : "Transport"}</p>
+          <div className="mt-2 flex items-center gap-2 text-xs text-[#cdd7df]"><Usb size={14} className={isLive ? "text-[#c8f04a]" : "text-[#7f91a1]"} /> {isLive ? (isArabic ? "تم تفويض تصحيح USB" : "USB Debugging authorized") : (isArabic ? "بانتظار التفويض" : "Awaiting authorization")}</div>
+          <p className="mt-2 text-xs leading-5 text-[#8e9eae]">{isArabic ? "تبقى جميع العمليات على هذا الجهاز وفي هذا المتصفح." : "All work stays on this device and in this browser."}</p>
         </div>
       </aside>
 
       <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-8 lg:py-7">
         <header className="mb-7 flex flex-col gap-4 border-b border-[#d8d1c4] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="kicker text-[#687584]">Service bench / {active === "overview" ? copy.ready : workspace}</p>
+            <p className="kicker text-[#687584]">{isArabic ? "مكتب الخدمة" : "Service bench"} / {active === "overview" ? copy.ready : workspace}</p>
             <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{active === "overview" ? copy.inspect : active === "about" ? copy.about : workspace}</h1>
           </div>
           <div className={`status-stamp w-fit ${isLive ? "text-[#527321]" : "text-[#687584]"}`}><span>{isLive ? "live device" : "not connected"}</span></div>
@@ -403,18 +482,19 @@ export default function Home() {
         )}
 
         {active === "privacy" && <PrivacyWorkspace isLive={isLive} run={async (command, label) => { try { const result = await adb.current.run(command); addReceipt(result, label); toast.success("Privacy check completed."); } catch (error) { toast.error(error instanceof Error ? error.message : "Command could not run."); } }} />}
-        {active === "mirror" && <MirrorWorkspace isLive={isLive} />}
+        {active === "mirror" && <LiveMirrorWorkspace language={language} isLive={isLive} state={mirrorState} canvasRef={mirrorCanvas} start={startLiveMirror} stop={stopLiveMirror} />}
         {active === "profiles" && <ProfilesWorkspace isLive={isLive} output={userOutput} refresh={async () => { try { const result = await adb.current.listUsers(); setUserOutput(result.stdout); addReceipt(result, "Refreshed Android users and profiles"); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to inspect profiles."); } }} />}
         {active === "apk" && <ApkWorkspace isLive={isLive} install={installApk} />}
         {active === "files" && <FilesWorkspace isLive={isLive} path={filePath} setPath={setFilePath} files={files} loading={fileLoading} load={loadFiles} />}
         {active === "about" && <AboutWorkspace language={language} />}
 
-        <section className="mt-7 border-t border-[#d8d1c4] pt-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="kicker text-[#687584]">Operator detail</p><span className="status-stamp text-[#59869c]">logged</span></div><p className="mt-1 text-sm text-[#526273]">Run a deliberate shell command. It is logged as-is and uses standard USB debugging unless you write an `su -c` command yourself.</p></div><div className="flex w-full max-w-xl gap-2"><input value={terminal} onChange={(event) => setTerminal(event.target.value)} onKeyDown={(event) => event.key === "Enter" && runTerminal()} placeholder="e.g. getprop ro.build.fingerprint" className="h-10 min-w-0 flex-1 border border-[#d8d1c4] bg-[#fffdf8] px-3 mono text-xs outline-none focus:border-[#14253a]" /><Button onClick={runTerminal} disabled={!isLive || terminalRunning} variant="outline" className="action-button border-[#14253a]">{terminalRunning ? <Loader2 className="animate-spin" size={16} /> : <TerminalSquare size={16} />}</Button></div></div></section>
+        <section className="mt-7 border-t border-[#d8d1c4] pt-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="kicker text-[#687584]">{isArabic ? "تفاصيل المشغّل" : "Operator detail"}</p><span className="status-stamp text-[#59869c]">{isArabic ? "مسجل" : "logged"}</span></div><p className="mt-1 text-sm text-[#526273]">{isArabic ? "شغّل أمر shell مقصوداً. يُسجل كما هو ويستخدم تصحيح USB القياسي ما لم تكتب أمر su -c بنفسك." : "Run a deliberate shell command. It is logged as-is and uses standard USB debugging unless you write an `su -c` command yourself."}</p></div><div className="flex w-full max-w-xl gap-2"><input value={terminal} onChange={(event) => setTerminal(event.target.value)} onKeyDown={(event) => event.key === "Enter" && runTerminal()} placeholder="e.g. getprop ro.build.fingerprint" className="h-10 min-w-0 flex-1 border border-[#d8d1c4] bg-[#fffdf8] px-3 mono text-xs outline-none focus:border-[#14253a]" /><Button onClick={runTerminal} disabled={!isLive || terminalRunning} variant="outline" className="action-button border-[#14253a]">{terminalRunning ? <Loader2 className="animate-spin" size={16} /> : <TerminalSquare size={16} />}</Button></div></div></section>
       </main>
 
       <aside className="border-t border-[#2f4860] bg-[#14253a] text-[#f6f2ea] lg:sticky lg:top-0 lg:h-screen lg:border-l lg:border-t-0">
-        <div className="border-b border-[#2f4860] px-5 py-5"><div className="flex items-center justify-between"><div><p className="kicker text-[#c8f04a]">Command ledger</p><h2 className="mt-1 text-lg font-bold tracking-[-0.035em]">Nothing happens off record.</h2></div><ClipboardList size={19} className="text-[#8e9eae]" /></div><p className="mt-2 text-xs leading-5 text-[#a6b3be]">Local receipts keep command, output, authority, and restoration detail together.</p></div>
-        <div className="max-h-[600px] space-y-3 overflow-auto p-4 lg:max-h-[calc(100vh-174px)]">{receipts.map((receipt, index) => <article key={`${receipt.at}-${index}`} className="receipt-enter border border-[#2f4860] bg-[#1b3048] p-3"><div className="flex items-center justify-between gap-2"><span className={`status-stamp scale-90 origin-left ${receipt.exitCode === 0 ? "text-[#c8f04a]" : "text-[#f1a38e]"}`}>{receipt.authority}</span><span className="mono text-[0.62rem] text-[#8e9eae]">{shortTime(receipt.at)}</span></div><p className="mt-2 text-xs font-semibold text-white">{receipt.label}</p><p className="mono mt-2 break-all text-[0.66rem] leading-5 text-[#d7e0e8]">{commandName(receipt.command)}</p>{(receipt.stdout || receipt.stderr) && <p className={`mono mt-2 max-h-20 overflow-auto whitespace-pre-wrap border-l pl-2 text-[0.64rem] leading-5 ${receipt.stderr ? "border-[#f1a38e] text-[#f5c5ba]" : "border-[#59869c] text-[#b4c6d2]"}`}>{receipt.stderr || receipt.stdout}</p>}{receipt.restore && <p className="mono mt-2 text-[0.62rem] leading-5 text-[#c8f04a]">restore → {receipt.restore}</p>}</article>)}</div>
+        <div className="border-b border-[#2f4860] px-5 py-5"><div className="flex items-center justify-between"><div><p className="kicker text-[#c8f04a]">{isArabic ? "سجل الأوامر" : "Command ledger"}</p><h2 className="mt-1 text-lg font-bold tracking-[-0.035em]">{isArabic ? "لا يحدث شيء من دون سجل." : "Nothing happens off record."}</h2></div><ClipboardList size={19} className="text-[#8e9eae]" /></div><p className="mt-2 text-xs leading-5 text-[#a6b3be]">{isArabic ? "تحفظ الإيصالات المحلية الأمر والمخرجات والصلاحية وتفاصيل الاستعادة معاً." : "Local receipts keep command, output, authority, and restoration detail together."}</p></div>
+        <div className="max-h-[440px] space-y-3 overflow-auto p-4 lg:max-h-[calc(100vh-360px)]">{receipts.map((receipt, index) => <article key={`${receipt.at}-${index}`} className="receipt-enter border border-[#2f4860] bg-[#1b3048] p-3"><div className="flex items-center justify-between gap-2"><span className={`status-stamp scale-90 origin-left ${receipt.exitCode === 0 ? "text-[#c8f04a]" : "text-[#f1a38e]"}`}>{receipt.authority}</span><span className="mono text-[0.62rem] text-[#8e9eae]">{shortTime(receipt.at)}</span></div><p className="mt-2 text-xs font-semibold text-white">{receipt.label}</p><p className="mono mt-2 break-all text-[0.66rem] leading-5 text-[#d7e0e8]">{commandName(receipt.command)}</p>{(receipt.stdout || receipt.stderr) && <p className={`mono mt-2 max-h-20 overflow-auto whitespace-pre-wrap border-l pl-2 text-[0.64rem] leading-5 ${receipt.stderr ? "border-[#f1a38e] text-[#f5c5ba]" : "border-[#59869c] text-[#b4c6d2]"}`}>{receipt.stderr || receipt.stdout}</p>}{receipt.restore && <p className="mono mt-2 text-[0.62rem] leading-5 text-[#c8f04a]">restore → {receipt.restore}</p>}</article>)}</div>
+        <div className="border-t border-[#2f4860] bg-[#10243a] p-4"><p className="kicker text-[#c8f04a]">{isArabic ? "تصدير محلي" : "Local export"}</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => exportReceipts("json")} className="action-button border border-[#3d566e] px-2 py-2 text-xs text-[#f6f2ea] hover:border-[#c8f04a]"><Download className="mr-1 inline" size={13} />JSON</button><button onClick={() => exportReceipts("md")} className="action-button border border-[#3d566e] px-2 py-2 text-xs text-[#f6f2ea] hover:border-[#c8f04a]"><FileText className="mr-1 inline" size={13} />Markdown</button></div><label className="mono mt-4 block text-[0.61rem] text-[#8e9eae]">{isArabic ? "اسم برنامج الاستعادة" : "Recovery script name"}</label><input value={recoveryScriptName} onChange={(event) => setRecoveryScriptName(event.target.value)} className="mono mt-1 h-8 w-full border border-[#3d566e] bg-[#0e1d2c] px-2 text-[0.65rem] text-[#f6f2ea] outline-none focus:border-[#c8f04a]" /><button onClick={exportRecoveryScript} className="action-button mt-2 w-full border border-[#c8f04a] bg-[#c8f04a] px-2 py-2 text-xs font-semibold text-[#14253a] hover:bg-[#d7f66c]"><RotateCcw className="mr-1 inline" size={13} />{isArabic ? "إنشاء برنامج الاستعادة" : "Generate restore script"}</button><p className="mt-2 text-[0.61rem] leading-4 text-[#8e9eae]">{receipts.filter((receipt) => receipt.restore).length} {isArabic ? "مسار استعادة حزمة مسجّل. تبقى التنزيلات في هذا المتصفح." : "recorded package restore path(s). Downloads stay in this browser."}</p></div>
       </aside>
     </div>
   );
