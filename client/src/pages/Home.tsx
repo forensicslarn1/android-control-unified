@@ -248,7 +248,7 @@ export default function Home() {
           <img src="/manus-storage/android-control-mark_bcf284ab.png" alt="Android Control Center signal bracket mark" className="h-14 w-14" />
           <div className="min-w-0">
             <p className="kicker text-[#c8f04a]"><span className="cal-tick" />ACC / 01</p>
-            <p className="brand-wordmark mt-1 text-[0.72rem] text-white">Android<br />Control Center</p>
+            <p className="brand-wordmark mt-1 text-[0.72rem] text-white">AndroidControl<br />Center <span className="text-[#c8f04a]">Forensicslarn</span></p>
           </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 py-4 lg:block lg:space-y-1 lg:overflow-visible">

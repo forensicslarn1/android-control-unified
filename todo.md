@@ -1,0 +1,3 @@
+- [x] Apply the requested “AndroidControl Center Forensicslarn” brand wording.
+- [x] Verify the updated browser dashboard visually.
+- [ ] Save a new project checkpoint.
