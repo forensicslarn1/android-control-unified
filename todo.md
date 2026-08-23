@@ -1,3 +1,7 @@
 - [x] Apply the requested “AndroidControl Center Forensicslarn” brand wording.
 - [x] Verify the updated browser dashboard visually.
 - [ ] Save a new project checkpoint.
+- [x] Add the About section with the supplied Telegram channel and account links.
+- [x] Add Arabic, English, and other-language selector states to the dashboard.
+- [x] Verify the About section and language selector visually.
+- [ ] Save the updated project checkpoint.

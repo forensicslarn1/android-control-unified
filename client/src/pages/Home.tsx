@@ -5,6 +5,7 @@
 import { Button } from "@/components/ui/button";
 import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfile } from "@/lib/adbClient";
 import { COMMUNITY_SOURCE, fetchCommunityCatalog, type CommunityPackage } from "@/lib/communityCatalog";
+import AboutWorkspace from "@/components/AboutWorkspace";
 import {
   AppWindow,
   ArrowRight,
@@ -20,6 +21,8 @@ import {
   Folder,
   HardDrive,
   HelpCircle,
+  Info,
+  Languages,
   ListFilter,
   Loader2,
   LockKeyhole,
@@ -40,7 +43,8 @@ import {
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type Workspace = "overview" | "debloat" | "privacy" | "mirror" | "profiles" | "apk" | "files";
+type Workspace = "overview" | "debloat" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "about";
+type InterfaceLanguage = "en" | "ar" | "other";
 type Receipt = CommandResult & { label: string; authority: "USB" | "Root" | "Browser"; restore?: string };
 
 const nav: Array<{ id: Workspace; label: string; icon: typeof Smartphone }> = [
@@ -51,7 +55,38 @@ const nav: Array<{ id: Workspace; label: string; icon: typeof Smartphone }> = [
   { id: "profiles", label: "Work profiles", icon: UsersRound },
   { id: "apk", label: "APK desk", icon: FileArchive },
   { id: "files", label: "Files", icon: Folder },
+  { id: "about", label: "About", icon: Info },
 ];
+
+const languageCopy = {
+  en: {
+    direction: "ltr" as const,
+    language: "Interface language",
+    choices: { en: "English", ar: "العربية", other: "Other languages" },
+    nav: { overview: "Device desk", debloat: "Debloat", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", about: "About" },
+    ready: "ready",
+    inspect: "Inspect first. Change only what you can explain.",
+    about: "About Forensicslarn",
+  },
+  ar: {
+    direction: "rtl" as const,
+    language: "لغة الواجهة",
+    choices: { en: "English", ar: "العربية", other: "لغات أخرى" },
+    nav: { overview: "لوحة الجهاز", debloat: "تنظيف التطبيقات", privacy: "الخصوصية", mirror: "نسخ الشاشة", profiles: "ملفات العمل", apk: "حزمة APK", files: "الملفات", about: "حول" },
+    ready: "جاهز",
+    inspect: "افحص أولاً. غيّر فقط ما تستطيع شرحه.",
+    about: "حول Forensicslarn",
+  },
+  other: {
+    direction: "ltr" as const,
+    language: "Interface language",
+    choices: { en: "English", ar: "العربية", other: "Other languages" },
+    nav: { overview: "Device desk", debloat: "Debloat", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", about: "About" },
+    ready: "ready",
+    inspect: "Inspect first. Change only what you can explain.",
+    about: "About Forensicslarn",
+  },
+} as const;
 
 const initialReceipt: Receipt = {
   label: "Session waiting",
@@ -100,6 +135,7 @@ export default function Home() {
   const [userOutput, setUserOutput] = useState("");
   const [terminal, setTerminal] = useState("");
   const [terminalRunning, setTerminalRunning] = useState(false);
+  const [language, setLanguage] = useState<InterfaceLanguage>("en");
 
   const mappedPackages = useMemo(() => {
     const mapped = new Map(catalog.map((item) => [item.id, item]));
@@ -238,11 +274,19 @@ export default function Home() {
     }
   };
 
-  const workspace = nav.find((item) => item.id === active)?.label || "Device desk";
+  const copy = languageCopy[language];
+  const workspace = copy.nav[active];
   const isLive = Boolean(device);
 
+  const changeLanguage = (next: InterfaceLanguage) => {
+    setLanguage(next);
+    document.documentElement.lang = next === "ar" ? "ar" : "en";
+    document.documentElement.dir = languageCopy[next].direction;
+    toast.message(next === "ar" ? "تم تفعيل وضع العربية." : next === "other" ? "More language packs are being prepared." : "English interface selected.");
+  };
+
   return (
-    <div className="min-h-screen bg-[#f6f2ea] text-[#14253a] lg:grid lg:grid-cols-[230px_minmax(0,1fr)_330px]">
+    <div dir={copy.direction} className="min-h-screen bg-[#f6f2ea] text-[#14253a] lg:grid lg:grid-cols-[230px_minmax(0,1fr)_330px]">
       <aside className="border-b border-[#2f4860] bg-[#14253a] text-[#f6f2ea] lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-3 border-b border-[#2f4860] px-5 py-5">
           <img src="/manus-storage/android-control-mark_bcf284ab.png" alt="Android Control Center signal bracket mark" className="h-14 w-14" />
@@ -259,12 +303,21 @@ export default function Home() {
               <button key={item.id} onClick={() => setActive(item.id)} className={`action-button group flex min-w-max items-center gap-3 px-3 py-2.5 text-left text-sm lg:w-full ${chosen ? "bg-[#c8f04a] text-[#14253a]" : "text-[#cad3dc] hover:bg-[#223952] hover:text-white"}`}>
                 <span className="mono text-[0.64rem] opacity-70">0{index + 1}</span>
                 <Icon size={16} strokeWidth={1.8} />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium">{copy.nav[item.id]}</span>
               </button>
             );
           })}
         </nav>
         <div className="hidden px-5 lg:block lg:absolute lg:bottom-6">
+          <div className="mb-5 border-y border-[#2f4860] py-3">
+            <label className="kicker flex items-center gap-2 text-[#7f91a1]" htmlFor="language-choice"><Languages size={13} /> {copy.language}</label>
+            <select id="language-choice" value={language} onChange={(event) => changeLanguage(event.target.value as InterfaceLanguage)} className="mono mt-2 h-9 w-full border border-[#3d566e] bg-[#1b3048] px-2 text-xs text-[#f6f2ea] outline-none focus:border-[#c8f04a]">
+              <option value="en">{copy.choices.en}</option>
+              <option value="ar">{copy.choices.ar}</option>
+              <option value="other">{copy.choices.other}</option>
+            </select>
+            {language === "other" && <p className="mt-2 text-[0.63rem] leading-4 text-[#8e9eae]">Select English or Arabic today; additional language packs are being prepared.</p>}
+          </div>
           <p className="kicker text-[#7f91a1]">Transport</p>
           <div className="mt-2 flex items-center gap-2 text-xs text-[#cdd7df]"><Usb size={14} className={isLive ? "text-[#c8f04a]" : "text-[#7f91a1]"} /> {isLive ? "USB Debugging authorized" : "Awaiting authorization"}</div>
           <p className="mt-2 text-xs leading-5 text-[#8e9eae]">All work stays on this device and in this browser.</p>
@@ -274,8 +327,8 @@ export default function Home() {
       <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-8 lg:py-7">
         <header className="mb-7 flex flex-col gap-4 border-b border-[#d8d1c4] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="kicker text-[#687584]">Service bench / {active === "overview" ? "ready" : workspace}</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{active === "overview" ? "Inspect first. Change only what you can explain." : workspace}</h1>
+            <p className="kicker text-[#687584]">Service bench / {active === "overview" ? copy.ready : workspace}</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{active === "overview" ? copy.inspect : active === "about" ? copy.about : workspace}</h1>
           </div>
           <div className={`status-stamp w-fit ${isLive ? "text-[#527321]" : "text-[#687584]"}`}><span>{isLive ? "live device" : "not connected"}</span></div>
         </header>
@@ -343,6 +396,7 @@ export default function Home() {
         {active === "profiles" && <ProfilesWorkspace isLive={isLive} output={userOutput} refresh={async () => { try { const result = await adb.current.listUsers(); setUserOutput(result.stdout); addReceipt(result, "Refreshed Android users and profiles"); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to inspect profiles."); } }} />}
         {active === "apk" && <ApkWorkspace isLive={isLive} install={installApk} />}
         {active === "files" && <FilesWorkspace isLive={isLive} path={filePath} setPath={setFilePath} files={files} loading={fileLoading} load={loadFiles} />}
+        {active === "about" && <AboutWorkspace language={language} />}
 
         <section className="mt-7 border-t border-[#d8d1c4] pt-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="kicker text-[#687584]">Operator detail</p><span className="status-stamp text-[#59869c]">logged</span></div><p className="mt-1 text-sm text-[#526273]">Run a deliberate shell command. It is logged as-is and uses standard USB debugging unless you write an `su -c` command yourself.</p></div><div className="flex w-full max-w-xl gap-2"><input value={terminal} onChange={(event) => setTerminal(event.target.value)} onKeyDown={(event) => event.key === "Enter" && runTerminal()} placeholder="e.g. getprop ro.build.fingerprint" className="h-10 min-w-0 flex-1 border border-[#d8d1c4] bg-[#fffdf8] px-3 mono text-xs outline-none focus:border-[#14253a]" /><Button onClick={runTerminal} disabled={!isLive || terminalRunning} variant="outline" className="action-button border-[#14253a]">{terminalRunning ? <Loader2 className="animate-spin" size={16} /> : <TerminalSquare size={16} />}</Button></div></div></section>
       </main>
