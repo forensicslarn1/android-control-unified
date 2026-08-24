@@ -757,7 +757,7 @@ export default function Home() {
           </section>
         )}
 
-        {active === "degoogle" && <DeGoogleWorkspace language={language} isLive={isLive} packages={packages} disablePackage={disableDeGooglePackage} openSetup={() => setSetupOpen(true)} />}
+        {active === "degoogle" && <DeGoogleWorkspace language={language} isLive={isLive} packages={packages} manufacturer={device?.manufacturer} model={device?.model} disablePackage={disableDeGooglePackage} openSetup={() => setSetupOpen(true)} />}
         {active === "privacy" && <PrivacyWorkspace language={language} isLive={isLive} run={async (command, label) => { try { const result = await adb.current.run(command); addReceipt(result, label); toast.success(language === "ar" ? "اكتمل فحص الخصوصية." : "Privacy check completed."); } catch (error) { toast.error(error instanceof Error ? error.message : "Command could not run."); } }} />}
         {active === "mirror" && <LiveMirrorWorkspace language={language} isLive={isLive} state={mirrorState} canvasRef={mirrorCanvas} start={startLiveMirror} stop={stopLiveMirror} />}
         {active === "profiles" && <ProfilesWorkspace language={language} isLive={isLive} output={userOutput} refresh={async () => { try { const result = await adb.current.listUsers(); setUserOutput(result.stdout); addReceipt(result, language === "ar" ? "تم تحديث مستخدمي وملفات أندرويد" : "Refreshed Android users and profiles"); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to inspect profiles."); } }} />}

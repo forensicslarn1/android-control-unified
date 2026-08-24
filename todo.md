@@ -52,3 +52,9 @@
 - [x] Build a bilingual De-Google workstation with preview, alternatives, and receipt-backed actions.
 - [x] Validate De-Google safety guards, responsive flow, and project health.
 - [ ] Save the De-Google workstation checkpoint.
+- [x] Audit the adbzero repository and map compatible features against the current dashboard.
+- [x] Define adopted feature boundaries and safe OEM-specific De-Google profiles.
+- [x] Add compatible repository-derived features and OEM profile selection to De-Google.
+- [x] Add verified alternative-app icons and direct project links.
+- [x] Validate adopted capabilities, OEM safeguards, responsive flow, and project health.
+- [ ] Save the repository integration and OEM profile checkpoint.
