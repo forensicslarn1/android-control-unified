@@ -66,3 +66,12 @@
 - [x] Add a grouped favorites migration shortlist with direct links and compatibility context.
 - [x] Validate favorites persistence, responsive behavior, and project health.
 - [ ] Save the alternative favorites checkpoint.
+- [x] Audit the AndroidForensics repository and its authorized ADB collection workflow.
+- [x] Compare evidence categories, Android protection limits, and browser-local feasibility.
+- [x] Design a receipt-backed, timestamped evidence-collection workflow for authorized devices.
+- [x] Report recommended additions and operational limits.
+- [x] Design and implement the Evidence Snapshot operation list, progress, and outcome UI.
+- [x] Add timestamped case-bundle export from favorite alternative apps.
+- [x] Prepare and generate slides covering forensic and De-Google integration.
+- [x] Validate Evidence Snapshot, case-bundle export, presentation content, and project health.
+- [ ] Save the evidence snapshot and case-bundle checkpoint.

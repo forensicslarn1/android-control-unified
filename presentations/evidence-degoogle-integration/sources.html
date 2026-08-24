@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sources</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    .slide-container { width: 1280px; min-height: 720px; position: relative; overflow: hidden; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    .head { margin: 56px 86px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 12px; font-size: 40px; letter-spacing: -1.7px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; background: #0A2540; color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-family: "Courier New", monospace; }
+    .ledger { margin: 56px 86px 0; border-top: 1px solid #0A2540; display: grid; grid-template-columns: 1fr 1fr; column-gap: 66px; }
+    .reference { min-height: 112px; display: grid; grid-template-columns: 48px 1fr; gap: 14px; border-bottom: 1px solid rgba(10,37,64,.24); padding-top: 20px; }
+    .reference:nth-child(odd) { grid-column: 1; }
+    .reference:nth-child(even) { grid-column: 2; }
+    .refno { width: 31px; height: 31px; border-radius: 50%; background: #0A2540; color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-family: "Courier New", monospace; font-size: 12px; }
+    .reference h2 { font-size: 17px; letter-spacing: -.3px; line-height: 1.25; }
+    .reference p { margin-top: 7px; color: #425466; font-family: "Courier New", monospace; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+    .note { margin: 34px 86px 0; border-top: 3px solid #00D4B2; padding-top: 16px; display: grid; grid-template-columns: 175px 1fr; gap: 20px; }
+    .note-label { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; }
+    .note-copy { color: #425466; font-size: 14px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="head"><div><p class="eyebrow">Reference ledger / 11</p><h1>Sources</h1></div><div class="index">11</div></div>
+    <div class="ledger">
+      <article class="reference"><span class="refno">01</span><div><h2>Android Developers — Android Debug Bridge (adb)</h2><p>developer.android.com/tools/adb</p></div></article>
+      <article class="reference"><span class="refno">02</span><div><h2>Android Developers — Content providers</h2><p>developer.android.com/guide/topics/providers/content-providers</p></div></article>
+      <article class="reference"><span class="refno">03</span><div><h2>Android Open Source Project — Read bug reports</h2><p>source.android.com/docs/core/tests/debug/read-bug-reports</p></div></article>
+      <article class="reference"><span class="refno">04</span><div><h2>DouglasFreshHabian — AndroidForensics</h2><p>github.com/DouglasFreshHabian/AndroidForensics</p></div></article>
+      <article class="reference"><span class="refno">05</span><div><h2>forensicslarn1 — adbzero</h2><p>github.com/forensicslarn1/adbzero</p></div></article>
+      <article class="reference"><span class="refno">06</span><div><h2>Android Control Center — implementation notes</h2><p>Browser-local receipts, protected history, APK inspection, De-Google, and Evidence Snapshot design records.</p></div></article>
+    </div>
+    <div class="note"><p class="note-label">Use of sources</p><p class="note-copy">External materials informed platform limits and workflow concepts. Product behavior remains bounded by explicit device authorization, visible commands, browser-local storage, and user-initiated exports.</p></div>
+  </div>
+</body>
+</html>

@@ -7,12 +7,14 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfile, type MirrorSession } from "@/lib/adbClient";
 import { COMMUNITY_SOURCE, fetchCommunityCatalog, type CommunityPackage } from "@/lib/communityCatalog";
 import AboutWorkspace from "@/components/AboutWorkspace";
-import { DeGoogleWorkspace } from "@/components/DeGoogleWorkspace";
+import { DeGoogleWorkspace, type FavoriteAlternative } from "@/components/DeGoogleWorkspace";
+import { EvidenceSnapshotWorkspace, type EvidenceOperation, type EvidenceOutcome } from "@/components/EvidenceSnapshotWorkspace";
 import { FirstRunSetupDialog } from "@/components/FirstRunSetupDialog";
 import { LiveMirrorWorkspace, type MirrorState } from "@/components/LiveMirrorWorkspace";
 import { ReceiptHistoryWorkspace, type HistoryReceipt } from "@/components/ReceiptHistoryWorkspace";
 import { ApkInspectionWorkspace } from "@/components/ApkInspectionWorkspace";
 import { ShortcutGuideDialog } from "@/components/ShortcutGuideDialog";
+import { createCaseId, exportTimestampedCaseBundle } from "@/lib/caseBundle";
 import {
   AppWindow,
   ArrowRight,
@@ -20,6 +22,7 @@ import {
   Check,
   ChevronRight,
   CircleAlert,
+  ClipboardCheck,
   ClipboardList,
   Cpu,
   Download,
@@ -54,7 +57,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type Workspace = "overview" | "debloat" | "degoogle" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "history" | "about";
+type Workspace = "overview" | "debloat" | "degoogle" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "evidence" | "history" | "about";
 type InterfaceLanguage = "en" | "ar" | "other";
 type Receipt = CommandResult & { label: string; authority: "USB" | "Root" | "Browser"; restore?: string };
 type ReceiptArchive = { id: string; name: string; createdAt: string; updatedAt: string; receipts: HistoryReceipt[] };
@@ -68,6 +71,7 @@ const nav: Array<{ id: Workspace; label: string; icon: typeof Smartphone }> = [
   { id: "profiles", label: "Work profiles", icon: UsersRound },
   { id: "apk", label: "APK desk", icon: FileArchive },
   { id: "files", label: "Files", icon: Folder },
+  { id: "evidence", label: "Evidence Snapshot", icon: ClipboardCheck },
   { id: "history", label: "Receipt history", icon: History },
   { id: "about", label: "About", icon: Info },
 ];
@@ -77,7 +81,7 @@ const languageCopy = {
     direction: "ltr" as const,
     language: "Interface language",
     choices: { en: "English", ar: "العربية", other: "Other languages" },
-    nav: { overview: "Device desk", debloat: "Debloat", degoogle: "De-Google", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", history: "Receipt history", about: "About" },
+    nav: { overview: "Device desk", debloat: "Debloat", degoogle: "De-Google", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", evidence: "Evidence Snapshot", history: "Receipt history", about: "About" },
     ready: "ready",
     inspect: "Inspect first. Change only what you can explain.",
     about: "About Forensicslarn",
@@ -86,7 +90,7 @@ const languageCopy = {
     direction: "rtl" as const,
     language: "لغة الواجهة",
     choices: { en: "English", ar: "العربية", other: "لغات أخرى" },
-    nav: { overview: "لوحة الجهاز", debloat: "تنظيف التطبيقات", degoogle: "إزالة Google", privacy: "الخصوصية", mirror: "نسخ الشاشة", profiles: "ملفات العمل", apk: "حزمة APK", files: "الملفات", history: "أرشيف الإيصالات", about: "حول" },
+    nav: { overview: "لوحة الجهاز", debloat: "تنظيف التطبيقات", degoogle: "إزالة Google", privacy: "الخصوصية", mirror: "نسخ الشاشة", profiles: "ملفات العمل", apk: "حزمة APK", files: "الملفات", evidence: "لقطة الأدلة", history: "أرشيف الإيصالات", about: "حول" },
     ready: "جاهز",
     inspect: "افحص أولاً. غيّر فقط ما تستطيع شرحه.",
     about: "حول Forensicslarn",
@@ -95,7 +99,7 @@ const languageCopy = {
     direction: "ltr" as const,
     language: "Interface language",
     choices: { en: "English", ar: "العربية", other: "Other languages" },
-    nav: { overview: "Device desk", debloat: "Debloat", degoogle: "De-Google", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", history: "Receipt history", about: "About" },
+    nav: { overview: "Device desk", debloat: "Debloat", degoogle: "De-Google", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", evidence: "Evidence Snapshot", history: "Receipt history", about: "About" },
     ready: "ready",
     inspect: "Inspect first. Change only what you can explain.",
     about: "About Forensicslarn",
@@ -254,6 +258,39 @@ export default function Home() {
     anchor.download = filename;
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 500);
+  };
+
+  const runEvidenceOperation = async (operation: EvidenceOperation) => {
+    try {
+      const result = await adb.current.run(operation.command);
+      addReceipt(result, `Evidence snapshot · ${operation.label}`);
+      return result;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Evidence operation could not run.";
+      const result: CommandResult = { command: operation.command, stdout: "", stderr: detail, exitCode: 1, at: new Date().toISOString() };
+      addReceipt(result, `Evidence snapshot failed · ${operation.label}`);
+      return result;
+    }
+  };
+
+  const exportEvidenceCase = (outcomes: EvidenceOutcome[], selectedOperations: EvidenceOperation[]) => {
+    if (!outcomes.length) return;
+    const caseId = createCaseId("evidence-snapshot");
+    const operations = new Map(selectedOperations.map((operation) => [operation.id, operation]));
+    const report = outcomes.map((outcome) => {
+      const operation = operations.get(outcome.id);
+      return [`## ${operation?.label || outcome.id}`, "", `- **Status:** ${outcome.status}`, `- **Command:** \`${outcome.result?.command || operation?.command || "(not run)"}\``, `- **Completed:** ${outcome.completedAt || "(not completed)"}`, "", "```text", outcome.result?.stderr || outcome.result?.stdout || "(no output)", "```", ""].join("\n");
+    }).join("\n");
+    exportTimestampedCaseBundle(caseId, { caseType: "authorized-evidence-snapshot", device: device ? { manufacturer: device.manufacturer, model: device.model, androidVersion: device.androidVersion, sdk: device.sdk, serial: device.serial } : null, selectedOperationIds: selectedOperations.map((operation) => operation.id), note: "Browser-local export. Android permission denials and failed operations remain visible." }, [{ name: "evidence/collection-results.md", content: `# Evidence Snapshot\n\nCase: ${caseId}\n\n${report}` }, { name: "evidence/outcomes.json", content: JSON.stringify(outcomes, null, 2) }]);
+    toast.success(language === "ar" ? "تم تصدير حزمة الأدلة محلياً." : "Evidence case bundle exported locally.");
+  };
+
+  const exportFavoriteCase = (favorites: FavoriteAlternative[]) => {
+    if (!favorites.length) return;
+    const caseId = createCaseId("migration-shortlist");
+    const report = [`# Saved Alternative Migration Shortlist`, "", `Case: ${caseId}`, `Created: ${new Date().toISOString()}`, "", "These are user-selected links. Nothing was downloaded or installed.", "", ...favorites.flatMap((favorite, index) => [`## ${index + 1}. ${favorite.name}`, "", `- **Replaces:** ${favorite.replaces}`, `- **Category:** ${favorite.category}`, `- **Source:** ${favorite.source}`, `- **Minimum Android:** ${favorite.minAndroid ? `${favorite.minAndroid}+` : "not verified"}`, `- **Direct link:** ${favorite.url}`, ""])].join("\n");
+    exportTimestampedCaseBundle(caseId, { caseType: "degoogle-alternative-migration", favorites: favorites.length, note: "User-selected alternatives only. The bundle has no download payloads or automated install instructions." }, [{ name: "migration/favorites.md", content: report }, { name: "migration/favorites.json", content: JSON.stringify(favorites, null, 2) }]);
+    toast.success(language === "ar" ? "تم تصدير حزمة انتقال المفضلة محلياً." : "Favorite migration case bundle exported locally.");
   };
 
   const exportReceipts = (format: "json" | "md") => {
@@ -757,12 +794,13 @@ export default function Home() {
           </section>
         )}
 
-        {active === "degoogle" && <DeGoogleWorkspace language={language} isLive={isLive} packages={packages} manufacturer={device?.manufacturer} model={device?.model} androidVersion={device?.androidVersion} disablePackage={disableDeGooglePackage} openSetup={() => setSetupOpen(true)} />}
+        {active === "degoogle" && <DeGoogleWorkspace language={language} isLive={isLive} packages={packages} manufacturer={device?.manufacturer} model={device?.model} androidVersion={device?.androidVersion} disablePackage={disableDeGooglePackage} openSetup={() => setSetupOpen(true)} exportFavorites={exportFavoriteCase} />}
         {active === "privacy" && <PrivacyWorkspace language={language} isLive={isLive} run={async (command, label) => { try { const result = await adb.current.run(command); addReceipt(result, label); toast.success(language === "ar" ? "اكتمل فحص الخصوصية." : "Privacy check completed."); } catch (error) { toast.error(error instanceof Error ? error.message : "Command could not run."); } }} />}
         {active === "mirror" && <LiveMirrorWorkspace language={language} isLive={isLive} state={mirrorState} canvasRef={mirrorCanvas} start={startLiveMirror} stop={stopLiveMirror} />}
         {active === "profiles" && <ProfilesWorkspace language={language} isLive={isLive} output={userOutput} refresh={async () => { try { const result = await adb.current.listUsers(); setUserOutput(result.stdout); addReceipt(result, language === "ar" ? "تم تحديث مستخدمي وملفات أندرويد" : "Refreshed Android users and profiles"); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to inspect profiles."); } }} />}
         {active === "apk" && <ApkInspectionWorkspace language={language} isLive={isLive} install={installApk} />}
         {active === "files" && <FilesWorkspace language={language} isLive={isLive} path={filePath} setPath={setFilePath} files={files} loading={fileLoading} load={loadFiles} />}
+        {active === "evidence" && <EvidenceSnapshotWorkspace language={language} isLive={isLive} device={device} run={runEvidenceOperation} exportCase={exportEvidenceCase} openSetup={() => setSetupOpen(true)} />}
         {active === "history" && <ReceiptHistoryWorkspace language={language} history={receiptHistory} archives={receiptArchives.map(({ id, name, createdAt, updatedAt, receipts }) => ({ id, name, createdAt, updatedAt, receiptCount: receipts.length }))} activeArchiveId={activeReceiptArchive?.id || PRIMARY_ARCHIVE_ID} selectArchive={setActiveReceiptArchiveId} createArchive={createReceiptArchive} renameArchive={renameReceiptArchive} deleteArchive={deleteReceiptArchive} remove={removeHistoryReceipt} clear={clearReceiptHistory} updateTags={updateHistoryTags} exportHistory={exportHistory} protectHistory={protectHistory} importHistory={importProtectedHistory} />}
         {active === "about" && <AboutWorkspace language={language} />}
 

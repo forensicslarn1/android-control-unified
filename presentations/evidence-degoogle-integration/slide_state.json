@@ -1,0 +1,123 @@
+{
+  "project_info": {
+    "title": "Evidence + De-Google",
+    "created": 1787540467.333,
+    "last_updated": 1787540589.439,
+    "total_slides": 11
+  },
+  "slides": [
+    {
+      "id": "cover",
+      "state": "edited",
+      "pageNum": 1
+    },
+    {
+      "id": "one_desk",
+      "state": "edited",
+      "pageNum": 2
+    },
+    {
+      "id": "visible_queue",
+      "state": "edited",
+      "pageNum": 3
+    },
+    {
+      "id": "permission_boundaries",
+      "state": "edited",
+      "pageNum": 4
+    },
+    {
+      "id": "timestamped_bundles",
+      "state": "edited",
+      "pageNum": 5
+    },
+    {
+      "id": "device_reality",
+      "state": "edited",
+      "pageNum": 6
+    },
+    {
+      "id": "migration",
+      "state": "edited",
+      "pageNum": 7
+    },
+    {
+      "id": "favorites",
+      "state": "edited",
+      "pageNum": 8
+    },
+    {
+      "id": "safeguards",
+      "state": "edited",
+      "pageNum": 9
+    },
+    {
+      "id": "milestones",
+      "state": "edited",
+      "pageNum": 10
+    },
+    {
+      "id": "sources",
+      "state": "edited",
+      "pageNum": 11
+    }
+  ],
+  "outline": [
+    {
+      "id": "cover",
+      "title": "Evidence + De-Google",
+      "summary": "Cover slide for the transparent, browser-local Android audit and migration workflow."
+    },
+    {
+      "id": "one_desk",
+      "title": "One desk, two governed workflows",
+      "summary": "Show how Evidence Snapshot and De-Google share explicit local receipts and authorization boundaries."
+    },
+    {
+      "id": "visible_queue",
+      "title": "Evidence collection becomes a visible queue",
+      "summary": "Explain category selection, visible commands, progress, and outcome states."
+    },
+    {
+      "id": "permission_boundaries",
+      "title": "Permission boundaries stay explicit",
+      "summary": "Distinguish baseline evidence categories from sensitive optional categories that may be blocked."
+    },
+    {
+      "id": "timestamped_bundles",
+      "title": "Timestamped bundles preserve audit context",
+      "summary": "Explain the local ZIP case bundle, manifest, results, timestamps, and no-upload boundary."
+    },
+    {
+      "id": "device_reality",
+      "title": "De-Google starts with device reality",
+      "summary": "Show device inventory-derived candidates, OEM profile guards, and reversible actions.",
+      "image_plan": "/home/ubuntu/upload/Screenshot_٢٠٢٦٠٨٢٤_٠٣٥٥١٨_Chrome.jpg - Screenshot of the De-Google app interface showing levels of de-googling (Essential, Low, Medium, High, Total), perfectly matching the De-Google workflow discussion."
+    },
+    {
+      "id": "migration",
+      "title": "Alternatives turn removal into migration",
+      "summary": "Show linked alternatives, Android-version compatibility, search, filters, and favorites."
+    },
+    {
+      "id": "favorites",
+      "title": "Favorites export as a migration case",
+      "summary": "Explain timestamped shortlist bundles and the absence of auto-download or installation."
+    },
+    {
+      "id": "safeguards",
+      "title": "Safeguards make the workflow defensible",
+      "summary": "Highlight explicit RSA authorization, receipts, blocked results, and excluded root/secret-code actions."
+    },
+    {
+      "id": "milestones",
+      "title": "Recommended next milestones",
+      "summary": "Present the consent, chain-of-custody, and encryption enhancement roadmap."
+    },
+    {
+      "id": "sources",
+      "title": "Sources",
+      "summary": "Cite Android developer, Android Open Source, and AndroidForensics materials used in the workflow design."
+    }
+  ]
+}

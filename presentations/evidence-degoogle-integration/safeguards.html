@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Safeguards make the workflow defensible</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    .slide-container { width: 1280px; min-height: 720px; position: relative; overflow: hidden; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    .head { margin: 56px 84px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 12px; font-size: 40px; letter-spacing: -1.7px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; background: #0A2540; color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-family: "Courier New", monospace; }
+    .gates { margin: 70px 84px 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #0A2540; border-bottom: 1px solid #0A2540; }
+    .gate { min-height: 286px; border-right: 1px solid rgba(10,37,64,.27); padding-top: 28px; padding-left: 25px; padding-right: 23px; }
+    .gate:last-child { border-right: 0; }
+    .gate-num { color: #00A88E; font-family: "Courier New", monospace; font-size: 13px; letter-spacing: 1px; }
+    .gate h2 { margin-top: 22px; font-size: 23px; letter-spacing: -.7px; line-height: 1.08; }
+    .gate p { margin-top: 15px; color: #425466; font-size: 14px; line-height: 1.55; }
+    .gate .stamp { margin-top: 24px; border-top: 2px solid #00D4B2; padding-top: 8px; color: #0A2540; font-family: "Courier New", monospace; font-size: 11px; line-height: 1.5; text-transform: uppercase; }
+    .control { margin: 42px 84px 0; display: grid; grid-template-columns: 190px 1fr; border-top: 3px solid #00D4B2; }
+    .control .label { padding-top: 18px; color: #00A88E; font-family: "Courier New", monospace; font-size: 13px; letter-spacing: 1.2px; }
+    .control .text { padding-top: 15px; color: #0A2540; font-size: 18px; line-height: 1.45; }
+    .control strong { color: #934639; }
+    .source { margin: 24px 84px 0; color: #425466; font-family: "Courier New", monospace; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="head"><div><p class="eyebrow">Operational safeguards / 09</p><h1>Safeguards make the workflow defensible</h1></div><div class="index">09</div></div>
+    <div class="gates">
+      <section class="gate"><p class="gate-num">GATE / 01</p><h2>Explicit device authorization</h2><p>WebUSB selection and the Android RSA trust prompt must be completed before a shell command can run.</p><p class="stamp">Owner-visible consent</p></section>
+      <section class="gate"><p class="gate-num">GATE / 02</p><h2>Visible command boundary</h2><p>Operators see the selected operation and its exact command before the evidence queue begins.</p><p class="stamp">No silent collection</p></section>
+      <section class="gate"><p class="gate-num">GATE / 03</p><h2>Receipt-backed outcome</h2><p>Success, block, failure, and skipped status remain visible with command output and a timestamp.</p><p class="stamp">Failure is retained</p></section>
+      <section class="gate"><p class="gate-num">GATE / 04</p><h2>Export under user control</h2><p>Case bundles and migration shortlists download only after an explicit local export action.</p><p class="stamp">No default upload</p></section>
+    </div>
+    <div class="control"><p class="label">EXCLUDED</p><p class="text"><strong>Not part of the standard browser workflow:</strong> root-only data extraction, permission bypasses, hidden collection, and secret dialer-code enumeration. Android or OEM denial is recorded as a valid outcome—not treated as an obstacle to defeat.</p></div>
+    <p class="source">CONTROL BASIS → ANDROID USB DEBUGGING AUTHORIZATION · LOCAL COMMAND LEDGER · PROVIDER PERMISSION BOUNDARIES</p>
+  </div>
+</body>
+</html>

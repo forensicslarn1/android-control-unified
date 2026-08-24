@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recommended next milestones</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    .slide-container { width: 1280px; min-height: 720px; position: relative; overflow: hidden; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    .header { margin: 56px 84px 0; display: flex; align-items: flex-start; justify-content: space-between; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 12px; font-size: 40px; letter-spacing: -1.7px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; background: #0A2540; color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-family: "Courier New", monospace; }
+    .roadmap { margin: 72px 84px 0; display: grid; grid-template-columns: 1fr 74px 1fr 74px 1fr; min-height: 312px; align-items: stretch; }
+    .milestone { border-top: 2px solid #0A2540; border-bottom: 1px solid rgba(10,37,64,.28); padding-top: 26px; padding-left: 26px; padding-right: 24px; }
+    .milestone.focus { border-top-color: #00D4B2; background: rgba(0,212,178,.08); }
+    .milestone .sequence { color: #00A88E; font-family: "Courier New", monospace; font-size: 13px; letter-spacing: 1px; }
+    .milestone h2 { margin-top: 22px; font-size: 25px; line-height: 1.08; letter-spacing: -1px; }
+    .milestone p { margin-top: 16px; color: #425466; font-size: 14px; line-height: 1.55; }
+    .detail { margin-top: 22px; border-top: 1px solid rgba(10,37,64,.25); padding-top: 10px; color: #0A2540; font-family: "Courier New", monospace; font-size: 11px; line-height: 1.65; text-transform: uppercase; }
+    .arrow { display: flex; align-items: center; justify-content: center; color: #00A88E; font-family: "Courier New", monospace; font-size: 30px; }
+    .principle { margin: 48px 84px 0; display: grid; grid-template-columns: 180px 1fr; border-top: 1px solid #0A2540; }
+    .principle .label { padding-top: 17px; color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 1px; }
+    .principle p { padding-top: 14px; color: #425466; font-size: 16px; line-height: 1.45; }
+    .principle strong { color: #0A2540; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="header"><div><p class="eyebrow">Roadmap / 10</p><h1>Recommended next milestones</h1></div><div class="index">10</div></div>
+    <div class="roadmap">
+      <section class="milestone"><p class="sequence">M1 / CONSENT</p><h2>Category-specific acknowledgement</h2><p>Persist the operator’s explicit acknowledgement for selected sensitive categories in the local case manifest.</p><p class="detail">scope · operator reference · timestamp · selected category set</p></section>
+      <div class="arrow">→</div>
+      <section class="milestone focus"><p class="sequence">M2 / CONTEXT</p><h2>Local chain-of-custody note</h2><p>Add a case reference, operator note, and handoff context before collection and export.</p><p class="detail">case reference · acquisition purpose · device possession note</p></section>
+      <div class="arrow">→</div>
+      <section class="milestone"><p class="sequence">M3 / PROTECTION</p><h2>Encrypted case-bundle export</h2><p>Extend the existing browser-side AES-GCM archive model to user-selected evidence bundles.</p><p class="detail">web crypto · password-derived key · local recovery workflow</p></section>
+    </div>
+    <div class="principle"><p class="label">OPERATING RULE</p><p><strong>Strengthen the record before expanding the scope.</strong> Each milestone improves audit context, accountability, or local protection without weakening the requirement for explicit user authorization.</p></div>
+  </div>
+</body>
+</html>

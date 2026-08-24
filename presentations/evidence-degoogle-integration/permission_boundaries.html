@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Permission boundaries stay explicit</title>
+<style>
+*{box-sizing:border-box;margin:0}.slide-container{width:1280px;min-height:720px;position:relative;overflow:hidden;color:#0A2540;background-color:#F0F4F8;background-image:linear-gradient(rgba(10,37,64,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(10,37,64,.05) 1px,transparent 1px);background-size:40px 40px;font-family:Arial,Helvetica,sans-serif}.head{margin:54px 86px 0;display:flex;justify-content:space-between}.eyebrow{color:#425466;font-size:12px;letter-spacing:2px;text-transform:uppercase}h1{margin-top:12px;font-size:40px;letter-spacing:-1.7px}.index{width:46px;height:46px;border-radius:50%;background:#0A2540;color:#F0F4F8;display:flex;align-items:center;justify-content:center;font-family:"Courier New",monospace}.lanes{margin:62px 86px 0;display:grid;grid-template-columns:1fr 220px 1fr;min-height:370px;border-top:1px solid #0A2540;border-bottom:1px solid #0A2540}.lane{padding-top:30px;padding-left:30px;padding-right:28px}.lane h2{margin-top:18px;font-size:27px;letter-spacing:-1px}.label{font-family:"Courier New",monospace;font-size:12px;letter-spacing:1.2px}.base .label{color:#00A88E}.sensitive .label{color:#9A641C}.lane p{margin-top:14px;color:#425466;font-size:15px;line-height:1.5}.lane ul{list-style:none;margin-top:22px;font-size:15px;line-height:2}.base li:before{content:"+";color:#00A88E;margin-right:10px;font-family:"Courier New",monospace}.sensitive li:before{content:"!";color:#D39152;margin-right:10px;font-family:"Courier New",monospace}.boundary{border-left:1px solid rgba(10,37,64,.3);border-right:1px solid rgba(10,37,64,.3);background:#0A2540;color:#F0F4F8;padding-top:55px;text-align:center}.boundary .circle{margin:0 auto;width:78px;height:78px;border:2px solid #00D4B2;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#00D4B2;font-family:"Courier New",monospace;font-size:25px}.boundary h3{margin-top:24px;font-size:20px;letter-spacing:-.5px}.boundary p{margin:15px 22px 0;color:#C9D7E2;font-size:13px;line-height:1.55}.rule{margin:27px 86px 0;display:grid;grid-template-columns:150px 1fr;gap:22px;align-items:start}.rule .tag{font-family:"Courier New",monospace;color:#00A88E;font-size:12px;letter-spacing:1.2px}.rule p{color:#425466;font-size:14px;line-height:1.55}.rule strong{color:#0A2540}
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="head"><div><p class="eyebrow">Evidence Snapshot / 04</p><h1>Permission boundaries stay explicit</h1></div><div class="index">04</div></div>
+  <div class="lanes">
+    <section class="lane base"><p class="label">BASELINE / LOW SENSITIVITY</p><h2>Default snapshot</h2><p>Useful system facts selected for a standard authorized device audit.</p><ul><li>Device identity & build</li><li>Installed packages</li><li>Battery & network state</li><li>Storage & mount summary</li></ul></section>
+    <section class="boundary"><div class="circle">A/O</div><h3>Android + OEM policy</h3><p>Provider permissions, build differences, and vendor policy decide whether a sensitive query returns data.</p></section>
+    <section class="lane sensitive"><p class="label">OPTIONAL / SENSITIVE</p><h2>Consent-required scope</h2><p>Categories that can contain personal activity, account, or event information.</p><ul><li>Usage statistics</li><li>Bounded system log</li><li>Account-service summary</li><li>Communication-provider check</li></ul></section>
+  </div>
+  <div class="rule"><p class="tag">ENFORCEMENT</p><p><strong>Blocked is a valid outcome.</strong> The collection queue records denial or absence, continues with other selected categories, and never attempts to bypass Android protection boundaries.</p></div>
+</div>
+</body>
+</html>

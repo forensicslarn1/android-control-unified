@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Timestamped bundles preserve audit context</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    .slide-container { width: 1280px; min-height: 720px; position: relative; overflow: hidden; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    .head { margin: 56px 86px 0; display: flex; align-items: flex-start; justify-content: space-between; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 12px; font-size: 40px; letter-spacing: -1.7px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #0A2540; color: #F0F4F8; font-family: "Courier New", monospace; }
+    .layout { margin: 56px 86px 0; display: grid; grid-template-columns: 610px 1fr; gap: 72px; }
+    .bundle { min-height: 420px; border-top: 2px solid #0A2540; border-bottom: 1px solid #0A2540; background: rgba(255,255,255,.36); }
+    .bundle-head { padding-top: 22px; padding-left: 28px; padding-right: 28px; display: flex; justify-content: space-between; }
+    .bundle-title { font-family: "Courier New", monospace; font-size: 16px; font-weight: 700; }
+    .stamp { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; }
+    .tree { margin: 42px 28px 0; border-left: 1px solid #00A88E; }
+    .entry { min-height: 54px; display: grid; grid-template-columns: 120px 1fr; align-items: center; border-top: 1px solid rgba(10,37,64,.18); padding-left: 24px; padding-right: 16px; }
+    .entry:first-child { border-top: 0; }
+    .folder { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; }
+    .file { font-family: "Courier New", monospace; font-size: 14px; }
+    .file small { display: block; margin-top: 5px; color: #425466; font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+    .copy { border-top: 1px solid #0A2540; }
+    .step { min-height: 106px; display: grid; grid-template-columns: 48px 1fr; gap: 20px; border-bottom: 1px solid rgba(10,37,64,.22); padding-top: 18px; }
+    .step-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #00D4B2; color: #0A2540; font-family: "Courier New", monospace; font-size: 12px; font-weight: 700; }
+    .step h2 { font-size: 19px; letter-spacing: -.5px; }
+    .step p { margin-top: 8px; color: #425466; font-size: 14px; line-height: 1.45; }
+    .boundary { margin: 28px 86px 0; display: flex; align-items: center; gap: 18px; color: #0A2540; font-family: "Courier New", monospace; font-size: 13px; }
+    .boundary-line { height: 3px; width: 52px; background: #00D4B2; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="head"><div><p class="eyebrow">Evidence export / 05</p><h1>Timestamped bundles preserve audit context</h1></div><div class="index">05</div></div>
+    <div class="layout">
+      <section class="bundle">
+        <div class="bundle-head"><p class="bundle-title">evidence-snapshot-2026-08-24T… .zip</p><p class="stamp">LOCAL EXPORT</p></div>
+        <div class="tree">
+          <div class="entry"><span class="folder">ROOT</span><span class="file">manifest.json<small>case type · created time · device metadata · selected categories</small></span></div>
+          <div class="entry"><span class="folder">EVIDENCE</span><span class="file">collection-results.md<small>human-readable command results and outcome notes</small></span></div>
+          <div class="entry"><span class="folder">EVIDENCE</span><span class="file">outcomes.json<small>machine-readable status, command output, and completion data</small></span></div>
+          <div class="entry"><span class="folder">RECEIPTS</span><span class="file">local command ledger<small>visible supporting record retained in the browser history</small></span></div>
+        </div>
+      </section>
+      <section class="copy">
+        <div class="step"><span class="step-num">01</span><div><h2>Case ID is generated at export</h2><p>The bundle filename uses a timestamped local case identifier, making repeated collections distinguishable without a server-side case database.</p></div></div>
+        <div class="step"><span class="step-num">02</span><div><h2>Manifest keeps the collection intelligible</h2><p>Selected categories, device summary, timestamps, and the case type remain with the results instead of relying on a folder name alone.</p></div></div>
+        <div class="step"><span class="step-num">03</span><div><h2>Outputs remain separated and reviewable</h2><p>Markdown supports immediate reading while JSON supports subsequent local analysis or controlled archival.</p></div></div>
+      </section>
+    </div>
+    <div class="boundary"><span class="boundary-line"></span><span>USER-INITIATED DOWNLOAD · BROWSER-LOCAL EXPORT · NO DEFAULT UPLOAD</span></div>
+  </div>
+</body>
+</html>

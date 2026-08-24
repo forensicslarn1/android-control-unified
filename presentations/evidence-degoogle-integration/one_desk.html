@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>One desk, two governed workflows</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    .slide-container { width: 1280px; min-height: 720px; position: relative; overflow: hidden; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    .top { margin: 56px 84px 0; display: flex; align-items: flex-start; justify-content: space-between; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 12px; font-size: 40px; letter-spacing: -1.6px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; background: #0A2540; color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-family: "Courier New", monospace; }
+    .system { margin: 66px 84px 0; display: grid; grid-template-columns: 1fr 1fr 260px; border-top: 1px solid #0A2540; border-bottom: 1px solid #0A2540; min-height: 360px; }
+    .lane { padding-top: 35px; padding-left: 34px; padding-right: 34px; border-right: 1px solid rgba(10,37,64,.3); position: relative; }
+    .lane .marker { color: #00A88E; font-family: "Courier New", monospace; font-size: 13px; letter-spacing: 1.4px; }
+    .lane h2 { margin-top: 22px; font-size: 29px; line-height: 1.05; letter-spacing: -1px; }
+    .lane p { margin-top: 17px; color: #425466; font-size: 16px; line-height: 1.55; max-width: 285px; }
+    .lane ul { margin-top: 24px; list-style: none; color: #0A2540; font-size: 14px; line-height: 1.75; }
+    .lane li::before { content: "—"; color: #00A88E; margin-right: 9px; }
+    .ledger { padding-top: 35px; padding-left: 26px; padding-right: 25px; background: #0A2540; color: #F0F4F8; }
+    .ledger .marker { color: #00D4B2; font-family: "Courier New", monospace; font-size: 13px; letter-spacing: 1.4px; }
+    .ledger h2 { margin-top: 22px; font-size: 26px; letter-spacing: -1px; }
+    .ledger p { margin-top: 18px; color: #C9D7E2; font-size: 14px; line-height: 1.6; }
+    .ledger .stamp { margin-top: 34px; border-top: 1px solid #00D4B2; padding-top: 14px; color: #00D4B2; font-family: "Courier New", monospace; font-size: 12px; line-height: 1.7; }
+    .note { margin: 26px 84px 0; color: #425466; font-family: "Courier New", monospace; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="top"><div><p class="eyebrow">Operational model / 02</p><h1>One desk, two governed workflows</h1></div><div class="index">02</div></div>
+    <div class="system">
+      <section class="lane"><p class="marker">01 / READ</p><h2>Evidence<br>Snapshot</h2><p>Collect selected device facts without changing the phone.</p><ul><li>Visible ADB commands</li><li>Category-level outcomes</li><li>Local case export</li></ul></section>
+      <section class="lane"><p class="marker">02 / REVIEW</p><h2>De‑Google<br>Migration</h2><p>Review device-specific candidates before a reversible user action.</p><ul><li>Inventory-derived packages</li><li>OEM guard profiles</li><li>Alternative shortlist</li></ul></section>
+      <aside class="ledger"><p class="marker">03 / RECORD</p><h2>Local command ledger</h2><p>Every operation retains its command, output, authority, timestamp, and restoration path when applicable.</p><p class="stamp">NO SILENT ACTIONS<br>NO DEFAULT UPLOADS<br>NO PERMISSION BYPASS</p></aside>
+    </div>
+    <p class="note">AUDIT PRINCIPLE → INSPECT FIRST. CHANGE ONLY WHAT YOU CAN EXPLAIN.</p>
+  </div>
+</body>
+</html>
