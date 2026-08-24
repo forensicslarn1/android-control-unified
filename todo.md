@@ -58,3 +58,7 @@
 - [x] Add verified alternative-app icons and direct project links.
 - [x] Validate adopted capabilities, OEM safeguards, responsive flow, and project health.
 - [ ] Save the repository integration and OEM profile checkpoint.
+- [x] Add version-aware compatibility metadata and guidance to De-Google alternatives.
+- [x] Add searchable, filterable discovery controls to the Alternatives step.
+- [x] Validate compatibility messaging, filters, responsive behavior, and project health.
+- [ ] Save the version-aware alternatives checkpoint.

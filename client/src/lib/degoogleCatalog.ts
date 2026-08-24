@@ -12,6 +12,7 @@ export type DeGoogleAlternative = {
   url: string;
   source: "F-Droid" | "Project";
   icon: AlternativeIcon;
+  minAndroid?: number;
 };
 
 export type DeGoogleCandidate = {
@@ -99,6 +100,21 @@ export const DEGOOGLE_CANDIDATES: DeGoogleCandidate[] = [
   { id: "com.google.android.syncadapters.contacts", name: "Google Contacts Sync", group: "Sync", minimumLevel: "total", action: "review" },
   { id: "com.google.android.syncadapters.calendar", name: "Google Calendar Sync", group: "Sync", minimumLevel: "total", action: "review" },
 ];
+
+const ALTERNATIVE_MINIMUMS: Record<string, number> = {
+  "AntennaPod": 6,
+  "Aves Libre": 7,
+  "Jitsi Meet": 8,
+  "NewPipe": 6,
+  "Nextcloud": 9,
+  "Organic Maps": 5,
+  "Thunderbird": 6,
+  "Fossify Messages": 8,
+};
+
+export function getAlternativeMinimumAndroid(alternative: DeGoogleAlternative) {
+  return alternative.minAndroid ?? ALTERNATIVE_MINIMUMS[alternative.name];
+}
 
 export function getOemProfile(id: OemProfile["id"]) {
   return OEM_PROFILES.find((profile) => profile.id === id) ?? OEM_PROFILES[0];
