@@ -62,3 +62,7 @@
 - [x] Add searchable, filterable discovery controls to the Alternatives step.
 - [x] Validate compatibility messaging, filters, responsive behavior, and project health.
 - [ ] Save the version-aware alternatives checkpoint.
+- [x] Add browser-local favorite controls to alternative-app cards.
+- [x] Add a grouped favorites migration shortlist with direct links and compatibility context.
+- [x] Validate favorites persistence, responsive behavior, and project health.
+- [ ] Save the alternative favorites checkpoint.
