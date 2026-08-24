@@ -43,3 +43,7 @@
 - [x] Refine responsive layout, typography, color system, and browser compatibility.
 - [x] Validate desktop/mobile usability and build health.
 - [ ] Save the UX and visual-system refinement checkpoint.
+- [x] Add safe desktop workstation keyboard shortcuts and shortcut guidance.
+- [x] Add contextual first-run browser and device-authorization setup.
+- [x] Validate keyboard safety, onboarding behavior, responsiveness, and build health.
+- [ ] Save the desktop navigation and setup-flow checkpoint.

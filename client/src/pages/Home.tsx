@@ -7,9 +7,11 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfile, type MirrorSession } from "@/lib/adbClient";
 import { COMMUNITY_SOURCE, fetchCommunityCatalog, type CommunityPackage } from "@/lib/communityCatalog";
 import AboutWorkspace from "@/components/AboutWorkspace";
+import { FirstRunSetupDialog } from "@/components/FirstRunSetupDialog";
 import { LiveMirrorWorkspace, type MirrorState } from "@/components/LiveMirrorWorkspace";
 import { ReceiptHistoryWorkspace, type HistoryReceipt } from "@/components/ReceiptHistoryWorkspace";
 import { ApkInspectionWorkspace } from "@/components/ApkInspectionWorkspace";
+import { ShortcutGuideDialog } from "@/components/ShortcutGuideDialog";
 import {
   AppWindow,
   ArrowRight,
@@ -27,6 +29,7 @@ import {
   History,
   HelpCircle,
   Info,
+  Keyboard,
   Languages,
   ListFilter,
   Loader2,
@@ -111,6 +114,7 @@ const RECEIPT_HISTORY_KEY = "acc-receipt-history-v1";
 const RECEIPT_ARCHIVES_KEY = "acc-receipt-archives-v1";
 const ACTIVE_RECEIPT_ARCHIVE_KEY = "acc-active-receipt-archive-v1";
 const PRIMARY_ARCHIVE_ID = "primary";
+const FIRST_RUN_SETUP_KEY = "acc-first-run-setup-v1";
 
 function shortTime(value: string) {
   return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(value));
@@ -201,6 +205,8 @@ export default function Home() {
   const [language, setLanguage] = useState<InterfaceLanguage>(() => (localStorage.getItem("acc-language") as InterfaceLanguage) || "en");
   const [mirrorState, setMirrorState] = useState<MirrorState>({ phase: "idle", detail: "Connect and authorize a device, then start an explicit local Scrcpy session." });
   const [recoveryScriptName, setRecoveryScriptName] = useState("android-control-recovery");
+  const [setupOpen, setSetupOpen] = useState(() => !localStorage.getItem(FIRST_RUN_SETUP_KEY));
+  const [shortcutGuideOpen, setShortcutGuideOpen] = useState(false);
 
   const activeReceiptArchive = useMemo(() => receiptArchives.find((archive) => archive.id === activeReceiptArchiveId) || receiptArchives[0], [receiptArchives, activeReceiptArchiveId]);
   const receiptHistory = activeReceiptArchive?.receipts || [];
@@ -400,6 +406,17 @@ export default function Home() {
     }
   };
 
+  const deferSetup = () => {
+    localStorage.setItem(FIRST_RUN_SETUP_KEY, "deferred");
+    setSetupOpen(false);
+  };
+
+  const beginAuthorizationFromSetup = () => {
+    localStorage.setItem(FIRST_RUN_SETUP_KEY, "completed");
+    setSetupOpen(false);
+    void connect();
+  };
+
   const refreshCatalog = async () => {
     setCatalogLoading(true);
     try {
@@ -544,6 +561,30 @@ export default function Home() {
   }, [language]);
 
   useEffect(() => {
+    const handleKeyboardNavigation = (event: KeyboardEvent) => {
+      if (setupOpen || shortcutGuideOpen || event.defaultPrevented || event.isComposing || !window.matchMedia("(min-width: 1024px)").matches) return;
+      const target = event.target as HTMLElement | null;
+      const isEditing = target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName || "");
+      if (isEditing) return;
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setShortcutGuideOpen(true);
+        return;
+      }
+
+      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !/^[1-9]$/.test(event.key)) return;
+      const destination = nav[Number(event.key) - 1];
+      if (!destination) return;
+      event.preventDefault();
+      setActive(destination.id);
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("keydown", handleKeyboardNavigation);
+    return () => window.removeEventListener("keydown", handleKeyboardNavigation);
+  }, [setupOpen, shortcutGuideOpen]);
+
+  useEffect(() => {
     try {
       localStorage.setItem(RECEIPT_ARCHIVES_KEY, JSON.stringify(receiptArchives));
       localStorage.setItem(ACTIVE_RECEIPT_ARCHIVE_KEY, activeReceiptArchive?.id || PRIMARY_ARCHIVE_ID);
@@ -625,6 +666,8 @@ export default function Home() {
           <div className="flex flex-wrap items-center gap-2">
             <div className={`status-stamp w-fit ${isLive ? "text-[#527321]" : "text-[#687584]"}`}><span>{isLive ? (isArabic ? "جهاز مباشر" : "live device") : (isArabic ? "غير متصل" : "not connected")}</span></div>
             <div className={`status-stamp w-fit ${browserCapabilities.usb ? "text-[#59869c]" : "text-[#934639]"}`}><span>{browserCapabilities.usb ? "WebUSB" : "WebUSB unavailable"}</span></div>
+            <button onClick={() => setSetupOpen(true)} className="action-button inline-flex items-center gap-2 border border-[#14253a] bg-[#fffdf8] px-2.5 py-1.5 text-xs font-semibold text-[#14253a] hover:bg-[#e6f4bb] dark:border-[#d7e0e8] dark:bg-[#14253a] dark:text-[#e7eef3] dark:hover:bg-[#293f22]"><HelpCircle size={14} />{isArabic ? "إعداد الاتصال" : "Setup"}</button>
+            <button onClick={() => setShortcutGuideOpen(true)} className="action-button hidden items-center gap-2 border border-[#14253a] bg-[#fffdf8] px-2.5 py-1.5 text-xs font-semibold text-[#14253a] hover:bg-[#e6f4bb] dark:border-[#d7e0e8] dark:bg-[#14253a] dark:text-[#e7eef3] dark:hover:bg-[#293f22] lg:inline-flex" title={isArabic ? "اختصارات لوحة المفاتيح" : "Keyboard shortcuts"}><Keyboard size={14} />{isArabic ? "اختصارات" : "Shortcuts"}<kbd className="mono border border-current px-1 text-[0.6rem]">?</kbd></button>
           </div>
         </header>
 
@@ -710,6 +753,8 @@ export default function Home() {
         <div className="max-h-[440px] space-y-3 overflow-auto p-4 lg:max-h-[calc(100vh-360px)]">{receipts.map((receipt, index) => <article key={`${receipt.at}-${index}`} className="receipt-enter border border-[#2f4860] bg-[#1b3048] p-3"><div className="flex items-center justify-between gap-2"><span className={`status-stamp scale-90 origin-left ${receipt.exitCode === 0 ? "text-[#c8f04a]" : "text-[#f1a38e]"}`}>{receipt.authority}</span><span className="mono text-[0.62rem] text-[#8e9eae]">{shortTime(receipt.at)}</span></div><p className="mt-2 text-xs font-semibold text-white">{receipt.label}</p><p className="mono mt-2 break-all text-[0.66rem] leading-5 text-[#d7e0e8]">{commandName(receipt.command)}</p>{(receipt.stdout || receipt.stderr) && <p className={`mono mt-2 max-h-20 overflow-auto whitespace-pre-wrap border-l pl-2 text-[0.64rem] leading-5 ${receipt.stderr ? "border-[#f1a38e] text-[#f5c5ba]" : "border-[#59869c] text-[#b4c6d2]"}`}>{receipt.stderr || receipt.stdout}</p>}{receipt.restore && <p className="mono mt-2 text-[0.62rem] leading-5 text-[#c8f04a]">restore → {receipt.restore}</p>}</article>)}</div>
         <div className="border-t border-[#2f4860] bg-[#10243a] p-4"><p className="kicker text-[#c8f04a]">{isArabic ? "تصدير محلي" : "Local export"}</p><div className="mt-3 grid grid-cols-2 gap-2"><button onClick={() => exportReceipts("json")} className="action-button border border-[#3d566e] px-2 py-2 text-xs text-[#f6f2ea] hover:border-[#c8f04a]"><Download className="mr-1 inline" size={13} />JSON</button><button onClick={() => exportReceipts("md")} className="action-button border border-[#3d566e] px-2 py-2 text-xs text-[#f6f2ea] hover:border-[#c8f04a]"><FileText className="mr-1 inline" size={13} />Markdown</button></div><label className="mono mt-4 block text-[0.61rem] text-[#8e9eae]">{isArabic ? "اسم برنامج الاستعادة" : "Recovery script name"}</label><input value={recoveryScriptName} onChange={(event) => setRecoveryScriptName(event.target.value)} className="mono mt-1 h-8 w-full border border-[#3d566e] bg-[#0e1d2c] px-2 text-[0.65rem] text-[#f6f2ea] outline-none focus:border-[#c8f04a]" /><button onClick={exportRecoveryScript} className="action-button mt-2 w-full border border-[#c8f04a] bg-[#c8f04a] px-2 py-2 text-xs font-semibold text-[#14253a] hover:bg-[#d7f66c]"><RotateCcw className="mr-1 inline" size={13} />{isArabic ? "إنشاء برنامج الاستعادة" : "Generate restore script"}</button><p className="mt-2 text-[0.61rem] leading-4 text-[#8e9eae]">{receipts.filter((receipt) => receipt.restore).length} {isArabic ? "مسار استعادة حزمة مسجّل. تبقى التنزيلات في هذا المتصفح." : "recorded package restore path(s). Downloads stay in this browser."}</p></div>
       </aside>
+      <FirstRunSetupDialog open={setupOpen} language={language} usbSupported={browserCapabilities.usb} cryptoSupported={browserCapabilities.crypto} connecting={connecting} onOpenChange={(open) => open ? setSetupOpen(true) : deferSetup()} onStartAuthorization={beginAuthorizationFromSetup} onDefer={deferSetup} />
+      <ShortcutGuideDialog open={shortcutGuideOpen} language={language} onOpenChange={setShortcutGuideOpen} />
     </div>
   );
 }
