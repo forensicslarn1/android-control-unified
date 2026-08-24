@@ -7,6 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfile, type MirrorSession } from "@/lib/adbClient";
 import { COMMUNITY_SOURCE, fetchCommunityCatalog, type CommunityPackage } from "@/lib/communityCatalog";
 import AboutWorkspace from "@/components/AboutWorkspace";
+import { DeGoogleWorkspace } from "@/components/DeGoogleWorkspace";
 import { FirstRunSetupDialog } from "@/components/FirstRunSetupDialog";
 import { LiveMirrorWorkspace, type MirrorState } from "@/components/LiveMirrorWorkspace";
 import { ReceiptHistoryWorkspace, type HistoryReceipt } from "@/components/ReceiptHistoryWorkspace";
@@ -53,7 +54,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type Workspace = "overview" | "debloat" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "history" | "about";
+type Workspace = "overview" | "debloat" | "degoogle" | "privacy" | "mirror" | "profiles" | "apk" | "files" | "history" | "about";
 type InterfaceLanguage = "en" | "ar" | "other";
 type Receipt = CommandResult & { label: string; authority: "USB" | "Root" | "Browser"; restore?: string };
 type ReceiptArchive = { id: string; name: string; createdAt: string; updatedAt: string; receipts: HistoryReceipt[] };
@@ -61,6 +62,7 @@ type ReceiptArchive = { id: string; name: string; createdAt: string; updatedAt: 
 const nav: Array<{ id: Workspace; label: string; icon: typeof Smartphone }> = [
   { id: "overview", label: "Device desk", icon: Smartphone },
   { id: "debloat", label: "Debloat", icon: PackageOpen },
+  { id: "degoogle", label: "De-Google", icon: ShieldCheck },
   { id: "privacy", label: "Privacy", icon: ShieldCheck },
   { id: "mirror", label: "Mirror", icon: MonitorUp },
   { id: "profiles", label: "Work profiles", icon: UsersRound },
@@ -75,7 +77,7 @@ const languageCopy = {
     direction: "ltr" as const,
     language: "Interface language",
     choices: { en: "English", ar: "العربية", other: "Other languages" },
-    nav: { overview: "Device desk", debloat: "Debloat", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", history: "Receipt history", about: "About" },
+    nav: { overview: "Device desk", debloat: "Debloat", degoogle: "De-Google", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", history: "Receipt history", about: "About" },
     ready: "ready",
     inspect: "Inspect first. Change only what you can explain.",
     about: "About Forensicslarn",
@@ -84,7 +86,7 @@ const languageCopy = {
     direction: "rtl" as const,
     language: "لغة الواجهة",
     choices: { en: "English", ar: "العربية", other: "لغات أخرى" },
-    nav: { overview: "لوحة الجهاز", debloat: "تنظيف التطبيقات", privacy: "الخصوصية", mirror: "نسخ الشاشة", profiles: "ملفات العمل", apk: "حزمة APK", files: "الملفات", history: "أرشيف الإيصالات", about: "حول" },
+    nav: { overview: "لوحة الجهاز", debloat: "تنظيف التطبيقات", degoogle: "إزالة Google", privacy: "الخصوصية", mirror: "نسخ الشاشة", profiles: "ملفات العمل", apk: "حزمة APK", files: "الملفات", history: "أرشيف الإيصالات", about: "حول" },
     ready: "جاهز",
     inspect: "افحص أولاً. غيّر فقط ما تستطيع شرحه.",
     about: "حول Forensicslarn",
@@ -93,7 +95,7 @@ const languageCopy = {
     direction: "ltr" as const,
     language: "Interface language",
     choices: { en: "English", ar: "العربية", other: "Other languages" },
-    nav: { overview: "Device desk", debloat: "Debloat", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", history: "Receipt history", about: "About" },
+    nav: { overview: "Device desk", debloat: "Debloat", degoogle: "De-Google", privacy: "Privacy", mirror: "Mirror", profiles: "Work profiles", apk: "APK desk", files: "Files", history: "Receipt history", about: "About" },
     ready: "ready",
     inspect: "Inspect first. Change only what you can explain.",
     about: "About Forensicslarn",
@@ -463,6 +465,24 @@ export default function Home() {
     }
   };
 
+  const disableDeGooglePackage = async (id: string, label: string) => {
+    try {
+      const result = await adb.current.disablePackage(id);
+      addReceipt(result, label, "USB", `cmd package install-existing --user 0 ${id}`);
+      if (result.exitCode === 0) {
+        toast.success(language === "ar" ? "تم تسجيل تعطيل قابل للاستعادة." : "Reversible disablement recorded.");
+        return true;
+      }
+      toast.error(language === "ar" ? "أبلغ أندرويد عن نتيجة غير ناجحة. راجع الإيصال." : "Android reported a non-success result. Review the receipt.");
+      return false;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Package disablement failed.";
+      addReceipt({ command: `pm disable-user --user 0 ${id}`, stdout: "", stderr: detail, exitCode: 1, at: new Date().toISOString() }, label, "USB", `cmd package install-existing --user 0 ${id}`);
+      toast.error(detail);
+      return false;
+    }
+  };
+
   const runTerminal = async () => {
     if (!terminal.trim()) return;
     setTerminalRunning(true);
@@ -546,8 +566,8 @@ export default function Home() {
   const isLive = Boolean(device);
   const isArabic = language === "ar";
   const navGroups = isArabic
-    ? [{ label: "تحكم الجهاز", items: nav.slice(0, 4) }, { label: "المراجعة والأمان", items: nav.slice(4, 7) }, { label: "الأدلة", items: nav.slice(7) }]
-    : [{ label: "Device control", items: nav.slice(0, 4) }, { label: "Review & safety", items: nav.slice(4, 7) }, { label: "Evidence", items: nav.slice(7) }];
+    ? [{ label: "تحكم الجهاز", items: nav.slice(0, 5) }, { label: "المراجعة والأمان", items: nav.slice(5, 8) }, { label: "الأدلة", items: nav.slice(8) }]
+    : [{ label: "Device control", items: nav.slice(0, 5) }, { label: "Review & safety", items: nav.slice(5, 8) }, { label: "Evidence", items: nav.slice(8) }];
   const debloatCopy = isArabic ? {
     context: "سياق المجتمع + الجرد المحلي", title: "ضع فقط التغييرات التي تفهمها في القائمة.", description: "تُطلب التعريفات من مستودع UAD-ng العام فقط عند اختيار التحديث. تبقى معرّفات الحزم المثبتة على هذا الجهاز. الإيقاف القابل للاستعادة للمستخدم 0 هو الخيار الآمن الافتراضي.", refresh: "تحديث القائمة", source: "المصدر:", notDownloaded: "لم يتم التنزيل", review: "مراجعة المصدر", connectTitle: "صِل جهازاً لمطابقة الحزم.", connectDetail: "يمكن تحديث قائمة المجتمع الآن، لكن مطابقة الحزم ووضعها في القائمة يتطلبان جرد أندرويد محلياً.", loadTitle: "حمّل تعريفات المجتمع لتصنيف هذا الجهاز.", loadDetail: "معرّفات الحزم المحلية جاهزة. يجري التحديث طلباً عاماً واحداً إلى GitHub ولا يرفع الجرد.", search: "ابحث في الحزم المطابقة", recommended: "عرض الموصى به فقط", package: "الحزمة", assessment: "تقييم المصدر", purpose: "الغرض والاعتماديات", restore: "استعادة", selected: "محدد", matched: "مطابق", only: "يبدأ الموصى به فقط مفعلاً.", disable: "إيقاف للمستخدم 0 (افتراضي)", uninstall: "إزالة للمستخدم 0 (متقدم)", reviewCommands: "مراجعة", commands: "أمر", descriptionSource: "وصف المصدر العام", neededBy: "تحتاجه", reviewRequired: "المراجعة مطلوبة", apply: "تطبيق الأوامر المراجعة", cancel: "إلغاء", risk: "استخدم على مسؤوليتك. يمكن لمصنّعي الأجهزة تقييد الحزم وتصنيف المجتمع ليس ضماناً. ستضاف النتائج ومحاولات الاستعادة إلى سجل الأوامر المحلي.",
   } : {
@@ -737,6 +757,7 @@ export default function Home() {
           </section>
         )}
 
+        {active === "degoogle" && <DeGoogleWorkspace language={language} isLive={isLive} packages={packages} disablePackage={disableDeGooglePackage} openSetup={() => setSetupOpen(true)} />}
         {active === "privacy" && <PrivacyWorkspace language={language} isLive={isLive} run={async (command, label) => { try { const result = await adb.current.run(command); addReceipt(result, label); toast.success(language === "ar" ? "اكتمل فحص الخصوصية." : "Privacy check completed."); } catch (error) { toast.error(error instanceof Error ? error.message : "Command could not run."); } }} />}
         {active === "mirror" && <LiveMirrorWorkspace language={language} isLive={isLive} state={mirrorState} canvasRef={mirrorCanvas} start={startLiveMirror} stop={stopLiveMirror} />}
         {active === "profiles" && <ProfilesWorkspace language={language} isLive={isLive} output={userOutput} refresh={async () => { try { const result = await adb.current.listUsers(); setUserOutput(result.stdout); addReceipt(result, language === "ar" ? "تم تحديث مستخدمي وملفات أندرويد" : "Refreshed Android users and profiles"); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to inspect profiles."); } }} />}

@@ -47,3 +47,8 @@
 - [x] Add contextual first-run browser and device-authorization setup.
 - [x] Validate keyboard safety, onboarding behavior, responsiveness, and build health.
 - [ ] Save the desktop navigation and setup-flow checkpoint.
+- [x] Review De-Google package actions, safety boundaries, and alternatives guidance.
+- [x] Define staged De-Google levels with device-specific preview and reversible-action controls.
+- [x] Build a bilingual De-Google workstation with preview, alternatives, and receipt-backed actions.
+- [x] Validate De-Google safety guards, responsive flow, and project health.
+- [ ] Save the De-Google workstation checkpoint.
