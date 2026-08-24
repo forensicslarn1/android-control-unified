@@ -204,6 +204,11 @@ export default function Home() {
 
   const activeReceiptArchive = useMemo(() => receiptArchives.find((archive) => archive.id === activeReceiptArchiveId) || receiptArchives[0], [receiptArchives, activeReceiptArchiveId]);
   const receiptHistory = activeReceiptArchive?.receipts || [];
+  const browserCapabilities = useMemo(() => ({
+    usb: typeof navigator !== "undefined" && "usb" in navigator,
+    crypto: Boolean(globalThis.crypto?.subtle),
+    codecs: typeof window !== "undefined" && "VideoDecoder" in window,
+  }), []);
   const setReceiptHistory = (next: HistoryReceipt[] | ((current: HistoryReceipt[]) => HistoryReceipt[])) => {
     const archiveId = activeReceiptArchive?.id || PRIMARY_ARCHIVE_ID;
     setReceiptArchives((current) => current.map((archive) => {
@@ -523,6 +528,9 @@ export default function Home() {
   const workspace = copy.nav[active];
   const isLive = Boolean(device);
   const isArabic = language === "ar";
+  const navGroups = isArabic
+    ? [{ label: "تحكم الجهاز", items: nav.slice(0, 4) }, { label: "المراجعة والأمان", items: nav.slice(4, 7) }, { label: "الأدلة", items: nav.slice(7) }]
+    : [{ label: "Device control", items: nav.slice(0, 4) }, { label: "Review & safety", items: nav.slice(4, 7) }, { label: "Evidence", items: nav.slice(7) }];
   const debloatCopy = isArabic ? {
     context: "سياق المجتمع + الجرد المحلي", title: "ضع فقط التغييرات التي تفهمها في القائمة.", description: "تُطلب التعريفات من مستودع UAD-ng العام فقط عند اختيار التحديث. تبقى معرّفات الحزم المثبتة على هذا الجهاز. الإيقاف القابل للاستعادة للمستخدم 0 هو الخيار الآمن الافتراضي.", refresh: "تحديث القائمة", source: "المصدر:", notDownloaded: "لم يتم التنزيل", review: "مراجعة المصدر", connectTitle: "صِل جهازاً لمطابقة الحزم.", connectDetail: "يمكن تحديث قائمة المجتمع الآن، لكن مطابقة الحزم ووضعها في القائمة يتطلبان جرد أندرويد محلياً.", loadTitle: "حمّل تعريفات المجتمع لتصنيف هذا الجهاز.", loadDetail: "معرّفات الحزم المحلية جاهزة. يجري التحديث طلباً عاماً واحداً إلى GitHub ولا يرفع الجرد.", search: "ابحث في الحزم المطابقة", recommended: "عرض الموصى به فقط", package: "الحزمة", assessment: "تقييم المصدر", purpose: "الغرض والاعتماديات", restore: "استعادة", selected: "محدد", matched: "مطابق", only: "يبدأ الموصى به فقط مفعلاً.", disable: "إيقاف للمستخدم 0 (افتراضي)", uninstall: "إزالة للمستخدم 0 (متقدم)", reviewCommands: "مراجعة", commands: "أمر", descriptionSource: "وصف المصدر العام", neededBy: "تحتاجه", reviewRequired: "المراجعة مطلوبة", apply: "تطبيق الأوامر المراجعة", cancel: "إلغاء", risk: "استخدم على مسؤوليتك. يمكن لمصنّعي الأجهزة تقييد الحزم وتصنيف المجتمع ليس ضماناً. ستضاف النتائج ومحاولات الاستعادة إلى سجل الأوامر المحلي.",
   } : {
@@ -552,7 +560,7 @@ export default function Home() {
 
   return (
     <div dir={copy.direction} className="app-workbench min-h-screen bg-[#f6f2ea] text-[#14253a] dark:bg-[#0e1d2c] dark:text-[#e7eef3] lg:grid lg:grid-cols-[230px_minmax(0,1fr)_330px]">
-      <aside className="border-b border-[#2f4860] bg-[#14253a] text-[#f6f2ea] lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
+      <aside className="border-b border-[#2f4860] bg-[#14253a] text-[#f6f2ea] lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-3 border-b border-[#2f4860] px-5 py-5">
           <img src="/manus-storage/android-control-mark_bcf284ab.png" alt="Android Control Center signal bracket mark" className="h-14 w-14" />
           <div className="min-w-0">
@@ -560,28 +568,38 @@ export default function Home() {
             <p className="brand-wordmark mt-1 text-[0.72rem] text-white">AndroidControl<br />Center <span className="text-[#c8f04a]">Forensicslarn</span></p>
           </div>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-3 py-4 lg:block lg:space-y-1 lg:overflow-visible">
-          {nav.map((item, index) => {
-            const Icon = item.icon;
-            const chosen = active === item.id;
-            return (
-              <button key={item.id} onClick={() => setActive(item.id)} className={`action-button group flex min-w-max items-center gap-3 px-3 py-2.5 text-left text-sm lg:w-full ${chosen ? "bg-[#c8f04a] text-[#14253a]" : "text-[#cad3dc] hover:bg-[#223952] hover:text-white"}`}>
-                <span className="mono text-[0.64rem] opacity-70">0{index + 1}</span>
-                <Icon size={16} strokeWidth={1.8} />
-                <span className="font-medium">{copy.nav[item.id]}</span>
-              </button>
-            );
-          })}
+        <nav aria-label={isArabic ? "محطات التحكم" : "Control workstations"} className="tool-navigation overflow-x-auto px-3 py-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          <div className="flex min-w-max gap-5 lg:block lg:min-w-0 lg:space-y-4">
+            {navGroups.map((group) => (
+              <div key={group.label} className="min-w-max lg:min-w-0">
+                <p className="nav-group-label px-2 pb-2 text-[#7f91a1]">{group.label}</p>
+                <div className="flex gap-1 lg:block lg:space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const chosen = active === item.id;
+                    const index = nav.findIndex((entry) => entry.id === item.id);
+                    return (
+                      <button key={item.id} onClick={() => setActive(item.id)} className={`action-button group flex min-w-max items-center gap-3 px-3 py-2.5 text-left text-sm lg:w-full ${chosen ? "bg-[#c8f04a] text-[#14253a]" : "text-[#cad3dc] hover:bg-[#223952] hover:text-white"}`}>
+                        <span className="mono text-[0.64rem] opacity-70">0{index + 1}</span>
+                        <Icon size={16} strokeWidth={1.8} />
+                        <span className="font-medium">{copy.nav[item.id]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </nav>
-        <div className="hidden px-5 lg:block lg:absolute lg:bottom-6">
-          <div className="mb-5 border-y border-[#2f4860] py-3">
+        <div className="grid grid-cols-2 gap-3 px-4 pb-4 lg:mt-auto lg:block lg:px-5 lg:pt-3">
+          <div className="border-y border-[#2f4860] py-3 lg:mb-5">
             <p className="kicker text-[#7f91a1]">{isArabic ? "المظهر" : "Appearance"}</p>
             <button onClick={() => toggleTheme?.()} className="action-button mt-2 flex w-full items-center justify-between border border-[#3d566e] bg-[#1b3048] px-2.5 py-2 text-xs text-[#f6f2ea] hover:border-[#c8f04a]" aria-label={`Switch to ${theme === "dark" ? "Light" : "Dark"} theme`}>
               <span className="flex items-center gap-2">{theme === "dark" ? <Sun size={14} className="text-[#c8f04a]" /> : <Moon size={14} className="text-[#c8f04a]" />}{theme === "dark" ? (isArabic ? "داكن" : "Dark") : (isArabic ? "فاتح" : "Light")}</span>
               <span className="mono text-[0.6rem] text-[#a6b3be]">{isArabic ? "تغيير" : "change"}</span>
             </button>
           </div>
-          <div className="mb-5 border-y border-[#2f4860] py-3">
+          <div className="border-y border-[#2f4860] py-3 lg:mb-5">
             <label className="kicker flex items-center gap-2 text-[#7f91a1]" htmlFor="language-choice"><Languages size={13} /> {copy.language}</label>
             <select id="language-choice" value={language} onChange={(event) => changeLanguage(event.target.value as InterfaceLanguage)} className="mono mt-2 h-9 w-full border border-[#3d566e] bg-[#1b3048] px-2 text-xs text-[#f6f2ea] outline-none focus:border-[#c8f04a]">
               <option value="en">{copy.choices.en}</option>
@@ -590,42 +608,55 @@ export default function Home() {
             </select>
             {language === "other" && <p className="mt-2 text-[0.63rem] leading-4 text-[#8e9eae]">Select English or Arabic today; additional language packs are being prepared.</p>}
           </div>
-          <p className="kicker text-[#7f91a1]">{isArabic ? "النقل" : "Transport"}</p>
-          <div className="mt-2 flex items-center gap-2 text-xs text-[#cdd7df]"><Usb size={14} className={isLive ? "text-[#c8f04a]" : "text-[#7f91a1]"} /> {isLive ? (isArabic ? "تم تفويض تصحيح USB" : "USB Debugging authorized") : (isArabic ? "بانتظار التفويض" : "Awaiting authorization")}</div>
-          <p className="mt-2 text-xs leading-5 text-[#8e9eae]">{isArabic ? "تبقى جميع العمليات على هذا الجهاز وفي هذا المتصفح." : "All work stays on this device and in this browser."}</p>
+          <div className="col-span-2">
+            <p className="kicker text-[#7f91a1]">{isArabic ? "النقل" : "Transport"}</p>
+            <div className="mt-2 flex items-center gap-2 text-xs text-[#cdd7df]"><Usb size={14} className={isLive ? "text-[#c8f04a]" : "text-[#7f91a1]"} /> {isLive ? (isArabic ? "تم تفويض تصحيح USB" : "USB Debugging authorized") : (browserCapabilities.usb ? (isArabic ? "بانتظار التفويض" : "Awaiting authorization") : (isArabic ? "يتطلب متصفح Chromium" : "Chromium browser required"))}</div>
+            <p className="mt-2 text-xs leading-5 text-[#8e9eae]">{isArabic ? "تبقى جميع العمليات على هذا الجهاز وفي هذا المتصفح." : "All work stays on this device and in this browser."}</p>
+          </div>
         </div>
       </aside>
 
       <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-8 lg:py-7">
-        <header className="mb-7 flex flex-col gap-4 border-b border-[#d8d1c4] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <header className="dashboard-header mb-5 flex flex-col gap-4 border-b border-[#d8d1c4] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="kicker text-[#687584]">{isArabic ? "مكتب الخدمة" : "Service bench"} / {active === "overview" ? copy.ready : workspace}</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{active === "overview" ? copy.inspect : active === "about" ? copy.about : workspace}</h1>
+            <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{active === "overview" ? (isArabic ? "حالة الخدمة المحلية" : "Local service status") : active === "about" ? copy.about : workspace}</h1>
           </div>
-          <div className={`status-stamp w-fit ${isLive ? "text-[#527321]" : "text-[#687584]"}`}><span>{isLive ? "live device" : "not connected"}</span></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className={`status-stamp w-fit ${isLive ? "text-[#527321]" : "text-[#687584]"}`}><span>{isLive ? (isArabic ? "جهاز مباشر" : "live device") : (isArabic ? "غير متصل" : "not connected")}</span></div>
+            <div className={`status-stamp w-fit ${browserCapabilities.usb ? "text-[#59869c]" : "text-[#934639]"}`}><span>{browserCapabilities.usb ? "WebUSB" : "WebUSB unavailable"}</span></div>
+          </div>
         </header>
 
         {active === "overview" && (
-          <section className="space-y-6">
-            <div className="relative overflow-hidden border border-[#d8d1c4] bg-[#fffdf8]">
-              <img src="/manus-storage/android-control-hero_a3d76729.jpg" alt="Android phone on a service workbench" className="absolute inset-y-0 right-0 h-full w-[56%] object-cover object-right opacity-90" />
-              <div className="absolute inset-y-0 right-0 w-[68%] bg-gradient-to-r from-[#fffdf8] via-[#fffdf8]/80 to-transparent dark:from-[#14253a] dark:via-[#14253a]/88" />
-              <div className="relative max-w-2xl p-6 sm:p-8">
-                <div className="flex flex-wrap items-center gap-2"><span className={`status-stamp ${isLive ? "text-[#527321]" : "text-[#687584]"}`}>{isLive ? "device live" : "session idle"}</span><span className="status-stamp text-[#59869c]">usb authority</span><span className="status-stamp text-[#687584]">local only</span></div>
-                <p className="kicker mt-5 text-[#687584]">Service desk / handoff required</p>
-                <h2 className="mt-2 max-w-lg text-3xl font-bold leading-[1.02] tracking-[-0.05em] sm:text-4xl">{isLive ? `${device?.manufacturer} ${device?.model} is ready for inspection.` : "Authorize a device to open the service record."}</h2>
-                <p className="mt-4 max-w-md text-sm leading-6 text-[#526273]">The next event is a visible WebUSB request. Android will ask you to trust this browser key; then the desk reads device facts, package inventory, profiles, and root availability locally.</p>
-                <div className="mt-5 grid max-w-xl gap-2 sm:grid-cols-2">
-                  <div className="receipt-strip"><span className="text-[#c8f04a]">NEXT / </span>WebUSB → ADB authentication<br /><span className="text-[#b4c6d2]">authority: browser + phone prompt</span></div>
-                  <div className="receipt-strip border-l-[#59869c]"><span className="text-[#c8f04a]">RESTORE / </span>not applicable before changes<br /><span className="text-[#b4c6d2]">evidence starts with inventory</span></div>
+          <section className="space-y-5">
+            <div className="service-desk overflow-hidden border border-[#d8d1c4] bg-[#fffdf8]">
+              <div className="grid lg:grid-cols-[minmax(0,1fr)_260px]">
+                <div className="p-5 sm:p-6">
+                  <div className="flex flex-wrap items-center gap-2"><span className={`status-stamp ${isLive ? "text-[#527321]" : "text-[#687584]"}`}>{isLive ? (isArabic ? "الجهاز جاهز" : "device live") : (isArabic ? "الجهاز بانتظار التفويض" : "device awaiting authorization")}</span><span className="status-stamp text-[#59869c]">browser authority</span><span className="status-stamp text-[#687584]">local only</span></div>
+                  <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="kicker text-[#687584]">{isArabic ? "خطوة المشغل التالية" : "Operator next step"}</p>
+                      <h2 className="mt-1 text-xl font-bold tracking-[-0.04em] sm:text-2xl">{isLive ? `${device?.manufacturer} ${device?.model} ${isArabic ? "جاهز للفحص" : "is ready for inspection"}.` : (isArabic ? "فوّض هذا المتصفح لقراءة سجل الجهاز." : "Authorize this browser to read the device record.")}</h2>
+                    </div>
+                    <span className="mono text-[0.62rem] text-[#687584]">CAL / 01 · HTTPS</span>
+                  </div>
+                  <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                    <div className="service-slip"><p className="kicker text-[#a6b3be]">{isArabic ? "النقل" : "Transport"}</p><p className="mt-2 text-sm font-semibold">{browserCapabilities.usb ? "WebUSB / ADB" : (isArabic ? "غير مدعوم" : "unavailable")}</p><p className="mono mt-1 text-[0.62rem] text-[#b4c6d2]">{browserCapabilities.usb ? (isArabic ? "اختيار مرئي مطلوب" : "visible chooser required") : (isArabic ? "استخدم Chromium عبر HTTPS" : "use Chromium over HTTPS")}</p></div>
+                    <div className="service-slip border-l-[#59869c]"><p className="kicker text-[#a6b3be]">{isArabic ? "التشفير المحلي" : "Local protection"}</p><p className="mt-2 text-sm font-semibold">{browserCapabilities.crypto ? "Web Crypto ready" : (isArabic ? "غير متاح" : "unavailable")}</p><p className="mono mt-1 text-[0.62rem] text-[#b4c6d2]">{isArabic ? "أرشيفات مشفرة في المتصفح" : "encrypted browser archives"}</p></div>
+                    <div className="service-slip border-l-[#c8f04a]"><p className="kicker text-[#a6b3be]">{isArabic ? "الاستعادة" : "Restore"}</p><p className="mt-2 text-sm font-semibold">{isLive ? (isArabic ? "افحص الإيصالات" : "review receipts") : (isArabic ? "لا تغييرات بعد" : "no changes yet")}</p><p className="mono mt-1 text-[0.62rem] text-[#b4c6d2]">{isArabic ? "المسارات تظهر بعد التنفيذ" : "paths appear after actions"}</p></div>
+                  </div>
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <Button onClick={connect} disabled={connecting || isLive || !browserCapabilities.usb} className="action-button bg-[#14253a] px-5 text-[#f6f2ea] hover:bg-[#223952]">
+                      {connecting ? <Loader2 className="mr-2 animate-spin" size={17} /> : <PlugZap className="mr-2" size={17} />}{isLive ? (isArabic ? "الجهاز مفوض" : "Device authorized") : (browserCapabilities.usb ? (isArabic ? "اتصل وفوض" : "Connect & authorize") : (isArabic ? "يتطلب متصفح Chromium" : "Chromium browser required"))}
+                    </Button>
+                    <span className="mono text-[0.67rem] text-[#687584]">{isArabic ? "لا اتصال صامت · الطلب يظهر في المتصفح والهاتف" : "no silent connection · consent appears in browser and phone"}</span>
+                  </div>
                 </div>
-                <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <Button onClick={connect} disabled={connecting || isLive} className="action-button bg-[#14253a] px-5 text-[#f6f2ea] hover:bg-[#223952]">
-                    {connecting ? <Loader2 className="mr-2 animate-spin" size={17} /> : <PlugZap className="mr-2" size={17} />}{isLive ? "Device authorized" : "Connect & authorize"}
-                  </Button>
-                  <span className="mono text-[0.67rem] text-[#687584]">HTTPS + Chromium · no silent connection</span>
-                </div>
-                <p className="mono mt-4 text-[0.61rem] text-[#687584]">INSPECTION SURFACE / USB-C DEVICE + LOCAL KEY / CAL: 01</p>
+                <figure className="bench-evidence relative min-h-52 overflow-hidden border-t border-[#d8d1c4] bg-[#14253a] lg:border-l lg:border-t-0">
+                  <img src="/manus-storage/android-control-hero_a3d76729.jpg" alt="Android phone annotated as local service-bench evidence" className="absolute inset-0 h-full w-full object-cover object-right opacity-60" />
+                  <figcaption className="absolute inset-x-0 bottom-0 border-t border-[#527089] bg-[#14253a]/92 p-4 text-[#f6f2ea]"><p className="kicker text-[#c8f04a]">INSPECTION SURFACE / 01</p><p className="mt-2 mono text-[0.65rem] leading-5 text-[#cdd7df]">USB-C DEVICE · BROWSER KEY · {browserCapabilities.codecs ? "VIDEO DECODER READY" : "VIDEO DECODER CHECK REQUIRED"}</p></figcaption>
+                </figure>
               </div>
             </div>
 

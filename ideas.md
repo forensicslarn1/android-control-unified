@@ -88,3 +88,7 @@ The logo mark is a bold, text-free **signal bracket enclosing a simplified Andro
 - Device imagery is always framed as service evidence with calibration labels, inspection markers, or ledger context; it is never used as generic hardware lifestyle imagery.
 - The brand lockup uses the signal-bracket device mark, a lime calibration tick, and a visibly constructed uppercase industrial wordmark rather than plain stacked label text.
 - Command receipts and square service stamps are repeated across the session, status cards, process steps, and operator detail so evidence becomes the product’s signature visual language.
+- The first viewport prioritizes live session state, browser authority, next action, restore position, and local API readiness above the procedural headline. The headline becomes a compact service label rather than a promotional hero.
+- The signal-bracket mark, uppercase industrial wordmark, and Signal Lime calibration tick remain visible in every global navigation treatment, including compact layouts.
+- Device photography is used only as annotated bench evidence: every frame carries a calibration label, inspection mark, or device-context caption.
+- Navigation is grouped by operational purpose on wide screens and becomes a compact, horizontally scrollable tool strip with visible appearance and language controls on small screens.
