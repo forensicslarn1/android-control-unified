@@ -25,6 +25,23 @@ jobs:
         shell: pwsh
         run: .\scripts\build-windows.ps1
 
+      - name: Sign executable when certificate secrets are configured
+        if: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 != '' && secrets.WINDOWS_CERTIFICATE_PASSWORD != '' }}
+        env:
+          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          $certPath = Join-Path $env:RUNNER_TEMP 'windows-code-signing.pfx'
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64))
+          $signtool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Filter signtool.exe -Recurse | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw 'Windows SDK signtool.exe was not found.' }
+          & $signtool.FullName sign /fd SHA256 /td SHA256 /tr 'http://timestamp.digicert.com' /f $certPath /p $env:WINDOWS_CERTIFICATE_PASSWORD 'desktop-companion\target\release\android-control-center-desktop.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'Authenticode signing failed.' }
+          & $signtool.FullName verify /pa /all 'desktop-companion\target\release\android-control-center-desktop.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'Authenticode signature verification failed.' }
+          Remove-Item $certPath -Force
+
       - name: Package Windows artifact
         shell: pwsh
         run: |

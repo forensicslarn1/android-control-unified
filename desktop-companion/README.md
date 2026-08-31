@@ -22,6 +22,17 @@ To build on a Windows development machine, install the stable Rust MSVC toolchai
 
 The resulting executable is `desktop-companion\\target\\release\\android-control-center-desktop.exe`. The GitHub Actions workflow also builds and packages `android-control-center-windows-x64.zip` for manual runs and version tags. The workflow downloads Platform Tools from Google at build time; the repository does not commit vendor binaries.
 
+## Optional Authenticode signing
+
+The workflow is prepared for trusted Authenticode signing but remains unsigned until a trusted Code Signing certificate is configured. After purchasing an OV or EV Code Signing certificate, export it as a password-protected `.pfx` file and configure these repository secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+| --- | --- |
+| `WINDOWS_CERTIFICATE_BASE64` | Base64-encoded contents of the `.pfx` file. |
+| `WINDOWS_CERTIFICATE_PASSWORD` | Password protecting the `.pfx` file. |
+
+Never commit the `.pfx` file or its password. When both secrets exist, GitHub Actions uses the Windows SDK `signtool.exe` with SHA-256 and an RFC 3161 timestamp, then verifies the signature before packaging. When either secret is absent, the build intentionally produces an unsigned artifact.
+
 ## Source development
 
 For a source-only run, install Android Platform Tools so `adb` is on the system `PATH`, then run `cargo run --release` inside `desktop-companion`. The native UI is built with `eframe`/`egui`; the supported release artifact is Windows x64.
