@@ -1,71 +1,71 @@
 - [x] Apply the requested “AndroidControl Center Forensicslarn” brand wording.
 - [x] Verify the updated browser dashboard visually.
-- [ ] Save a new project checkpoint.
+- [x] Save a new project checkpoint.
 - [x] Add the About section with the supplied Telegram channel and account links.
 - [x] Add Arabic, English, and other-language selector states to the dashboard.
 - [x] Verify the About section and language selector visually.
-- [ ] Save the updated project checkpoint.
+- [x] Save the updated project checkpoint.
 - [x] Add a persisted Light/Dark theme selector to the dashboard.
 - [x] Verify Light and Dark modes visually.
-- [ ] Save the theme-update checkpoint.
+- [x] Save the theme-update checkpoint.
 - [x] Prepare prioritized development feature recommendations.
 - [x] Complete Arabic and English translation coverage across dashboard workspaces.
 - [x] Add local command-receipt export.
 - [x] Add local package-recovery script generation.
 - [x] Implement Scrcpy live mirroring with start and stop session receipts.
 - [x] Verify localization, export, recovery, and mirroring flows.
-- [ ] Save the completed capabilities checkpoint.
+- [x] Save the completed capabilities checkpoint.
 - [x] Add a local receipt-history browser with search, filters, review, and clear controls.
 - [x] Persist receipt history only in browser-local storage.
 - [x] Complete Arabic translations for package and privacy workflows.
 - [x] Verify receipt-history management and bilingual workspaces.
-- [ ] Save the receipt-history and Arabic localization checkpoint.
+- [x] Save the receipt-history and Arabic localization checkpoint.
 - [x] Translate APK, file-management, and work-profile workspaces into Arabic.
 - [x] Add receipt time-range filtering and custom tags.
 - [x] Add password-protected local receipt-archive export.
 - [x] Run full project validation and repair any defects found.
 - [x] Verify Arabic translations, receipt filters, tags, and protected export.
-- [ ] Save the final localization and secure-archive checkpoint.
+- [x] Save the final localization and secure-archive checkpoint.
 - [x] Add in-app encrypted archive import and password-based receipt recovery.
 - [x] Add local APK certificate and permission inspection before installation.
 - [x] Add browser-local saved receipt-filter presets.
 - [x] Validate recovery, APK inspection, presets, and project quality.
-- [ ] Save the secure recovery and APK inspection checkpoint.
+- [x] Save the secure recovery and APK inspection checkpoint.
 - [x] Add APK v2/v3 signing-scheme inspection and trusted fingerprint comparison.
 - [x] Add a browser-local trusted certificate fingerprint list.
 - [x] Add named browser-local receipt archives with quick switching.
 - [x] Add plain-language explanations and red alerts for sensitive APK permissions.
 - [x] Validate signing, archive switching, permission explanations, and project quality.
-- [ ] Save the APK trust and multi-archive checkpoint.
+- [x] Save the APK trust and multi-archive checkpoint.
 - [x] Audit the current dashboard against the supplied reference and relevant interface practices.
 - [x] Document a focused UX, navigation, visual hierarchy, and integration feasibility plan.
 - [x] Simplify dashboard navigation and reduce visual clutter.
 - [x] Refine responsive layout, typography, color system, and browser compatibility.
 - [x] Validate desktop/mobile usability and build health.
-- [ ] Save the UX and visual-system refinement checkpoint.
+- [x] Save the UX and visual-system refinement checkpoint.
 - [x] Add safe desktop workstation keyboard shortcuts and shortcut guidance.
 - [x] Add contextual first-run browser and device-authorization setup.
 - [x] Validate keyboard safety, onboarding behavior, responsiveness, and build health.
-- [ ] Save the desktop navigation and setup-flow checkpoint.
+- [x] Save the desktop navigation and setup-flow checkpoint.
 - [x] Review De-Google package actions, safety boundaries, and alternatives guidance.
 - [x] Define staged De-Google levels with device-specific preview and reversible-action controls.
 - [x] Build a bilingual De-Google workstation with preview, alternatives, and receipt-backed actions.
 - [x] Validate De-Google safety guards, responsive flow, and project health.
-- [ ] Save the De-Google workstation checkpoint.
+- [x] Save the De-Google workstation checkpoint.
 - [x] Audit the adbzero repository and map compatible features against the current dashboard.
 - [x] Define adopted feature boundaries and safe OEM-specific De-Google profiles.
 - [x] Add compatible repository-derived features and OEM profile selection to De-Google.
 - [x] Add verified alternative-app icons and direct project links.
 - [x] Validate adopted capabilities, OEM safeguards, responsive flow, and project health.
-- [ ] Save the repository integration and OEM profile checkpoint.
+- [x] Save the repository integration and OEM profile checkpoint.
 - [x] Add version-aware compatibility metadata and guidance to De-Google alternatives.
 - [x] Add searchable, filterable discovery controls to the Alternatives step.
 - [x] Validate compatibility messaging, filters, responsive behavior, and project health.
-- [ ] Save the version-aware alternatives checkpoint.
+- [x] Save the version-aware alternatives checkpoint.
 - [x] Add browser-local favorite controls to alternative-app cards.
 - [x] Add a grouped favorites migration shortlist with direct links and compatibility context.
 - [x] Validate favorites persistence, responsive behavior, and project health.
-- [ ] Save the alternative favorites checkpoint.
+- [x] Save the alternative favorites checkpoint.
 - [x] Audit the AndroidForensics repository and its authorized ADB collection workflow.
 - [x] Compare evidence categories, Android protection limits, and browser-local feasibility.
 - [x] Design a receipt-backed, timestamped evidence-collection workflow for authorized devices.
@@ -74,7 +74,7 @@
 - [x] Add timestamped case-bundle export from favorite alternative apps.
 - [x] Prepare and generate slides covering forensic and De-Google integration.
 - [x] Validate Evidence Snapshot, case-bundle export, presentation content, and project health.
-- [ ] Save the evidence snapshot and case-bundle checkpoint.
+- [x] Save the evidence snapshot and case-bundle checkpoint.
 - [x] Define the non-destructive Serial/Modem Security Assessment interface and safety controls.
 - [x] Define UX improvements for forensic screenshot capture and packet export.
 - [x] Prepare and generate an integration slide deck for authorized forensics and De-Google migration.
