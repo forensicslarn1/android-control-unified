@@ -8,11 +8,23 @@ The normal package action is `pm disable-user --user 0 <package>`. The advanced 
 
 The app does not collect telemetry and never uploads device serials, installed packages, command output, or receipts. The only network behavior implemented is a manual request to the published UAD-ng package-list URL. The update settings screen does not silently poll; a maintainer must configure their own GitHub Releases endpoint before a public release workflow is enabled.
 
-## Local prerequisites
+## Windows release
 
-Install Android Platform Tools so `adb` is on the system `PATH`, enable Developer options and USB debugging on the Android device, then accept the debugging authorization dialog on the phone. Start the native app with `cargo run --release`.
+The supported distribution target is **Windows x64**. The release package contains the Rust desktop executable plus the official Android Platform Tools files required for ADB (`adb.exe`, `AdbWinApi.dll`, and `AdbWinUsbApi.dll`). The application first looks for `resources\\adb\\adb.exe` beside the executable and falls back to `adb.exe` on `PATH` when running from source.
 
-The executable is written with `eframe`/`egui`, which supports Windows, macOS, and Linux. It is source-first in this workspace; release packaging should build and sign each platform artifact in a CI pipeline that bundles or documents the appropriate Platform Tools dependency.
+Install the Android USB driver appropriate for the phone, enable Developer options and USB debugging, connect the phone by USB, and accept the RSA authorization dialog. No device command runs before the user starts an inspection. The app remains local-first and does not upload serials, inventory, receipts, or command output.
+
+To build on a Windows development machine, install the stable Rust MSVC toolchain and run from PowerShell:
+
+```powershell
+.\\scripts\\build-windows.ps1
+```
+
+The resulting executable is `desktop-companion\\target\\release\\android-control-center-desktop.exe`. The GitHub Actions workflow also builds and packages `android-control-center-windows-x64.zip` for manual runs and version tags. The workflow downloads Platform Tools from Google at build time; the repository does not commit vendor binaries.
+
+## Source development
+
+For a source-only run, install Android Platform Tools so `adb` is on the system `PATH`, then run `cargo run --release` inside `desktop-companion`. The native UI is built with `eframe`/`egui`; the supported release artifact is Windows x64.
 
 ## References
 

@@ -1,10 +1,11 @@
 //! Field Service Ledger native app: restrained, beginner-safe UI with a visible local command trail.
+#![cfg_attr(windows, windows_subsystem = "windows")]
 
 mod adb;
 mod catalog;
 mod models;
 
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, env, path::PathBuf};
 
 use eframe::egui::{self, Color32, RichText, Stroke};
 use models::{CommandReceipt, DeviceInfo, PackageDefinition};
@@ -33,11 +34,24 @@ struct App {
     update_endpoint: String,
 }
 
+fn default_adb_path() -> PathBuf {
+    let executable_name = if cfg!(windows) { "adb.exe" } else { "adb" };
+    let mut candidates = Vec::new();
+    if let Ok(exe) = env::current_exe() {
+        if let Some(parent) = exe.parent() {
+            candidates.push(parent.join("resources").join("adb").join(executable_name));
+            candidates.push(parent.join("adb").join(executable_name));
+        }
+    }
+    candidates.push(PathBuf::from(executable_name));
+    candidates.into_iter().find(|path| path.exists()).unwrap_or_else(|| PathBuf::from(executable_name))
+}
+
 impl Default for App {
     fn default() -> Self {
         Self {
             page: Page::Desk,
-            adb_path: PathBuf::from(if cfg!(windows) { "adb.exe" } else { "adb" }),
+            adb_path: default_adb_path(),
             device: None,
             packages: Vec::new(),
             catalog: HashMap::new(),
