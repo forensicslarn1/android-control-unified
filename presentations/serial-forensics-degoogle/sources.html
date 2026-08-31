@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sources</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    .slide-container { width: 1280px; min-height: 720px; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; padding-top: 48px; }
+    /* keep visual top spacing for the title while preventing margin collapse */
+    .head { margin: 0 82px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 10px; font-size: 40px; letter-spacing: -1.7px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #0A2540; color: #F0F4F8; font-family: "Courier New", monospace; }
+    /* reduce vertical spacing in ledger and references */
+    .ledger { margin: 32px 82px 0; display: grid; grid-template-columns: 1fr 1fr; column-gap: 48px; border-top: 1px solid #0A2540; }
+    .reference { min-height: 68px; display: grid; grid-template-columns: 42px 1fr; gap: 10px; border-bottom: 1px solid rgba(10,37,64,.23); padding-top: 8px; }
+    .refno { width: 29px; height: 29px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #0A2540; color: #F0F4F8; font-family: "Courier New", monospace; font-size: 11px; }
+    .reference h2 { font-size: 15px; line-height: 1.24; letter-spacing: -.25px; }
+    .reference p { margin-top: 6px; color: #425466; font-family: "Courier New", monospace; font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+    .note { margin: 18px 82px 0; display: grid; grid-template-columns: 160px 1fr; gap: 12px; border-top: 3px solid #00D4B2; padding-top: 10px; }
+    .note-label { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+    .note p { color: #425466; font-size: 13px; line-height: 1.43; }
+    .note strong { color: #0A2540; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="head"><div><p class="eyebrow">Reference ledger / 11</p><h1>Sources</h1></div><div class="index">11</div></div>
+    <section class="ledger">
+      <article class="reference"><span class="refno">01</span><div><h2>NIST SP 800-115 — Technical Guide to Information Security Testing and Assessment</h2><p>csrc.nist.gov/pubs/sp/800/115/final</p></div></article>
+      <article class="reference"><span class="refno">02</span><div><h2>NIST — Chain of custody</h2><p>csrc.nist.gov/glossary/term/chain_of_custody</p></div></article>
+      <article class="reference"><span class="refno">03</span><div><h2>NIST — Evidence Management</h2><p>nist.gov/forensic-science/interdisciplinary-topics/evidence-management</p></div></article>
+      <article class="reference"><span class="refno">04</span><div><h2>Android Developers — Android Debug Bridge (adb)</h2><p>developer.android.com/tools/adb</p></div></article>
+      <article class="reference"><span class="refno">05</span><div><h2>Android Developers — Content providers</h2><p>developer.android.com/guide/topics/providers/content-providers</p></div></article>
+      <article class="reference"><span class="refno">06</span><div><h2>DouglasFreshHabian — AndroidForensics</h2><p>github.com/DouglasFreshHabian/AndroidForensics</p></div></article>
+      <article class="reference"><span class="refno">07</span><div><h2>forensicslarn1 — adbzero</h2><p>github.com/forensicslarn1/adbzero</p></div></article>
+      <article class="reference"><span class="refno">08</span><div><h2>Android Control Center — local implementation notes</h2><p>Evidence Snapshot, De-Google, command receipts, and case-bundle design records.</p></div></article>
+    </section>
+    <div class="note"><span class="note-label">Use of sources</span><p><strong>Sources inform platform limits, evidence-handling concepts, and non-destructive assessment controls.</strong> The proposed experience remains bounded by explicit authorization, visible commands, browser-local handling, and user-initiated exports.</p></div>
+  </div>
+</body>
+</html>

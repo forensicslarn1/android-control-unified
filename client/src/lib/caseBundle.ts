@@ -7,7 +7,9 @@ import { strToU8, zipSync } from "fflate";
 export type CaseBundleFile = { name: string; content: string };
 
 function downloadBinary(filename: string, data: Uint8Array) {
-  const blob = new Blob([data], { type: "application/zip" });
+  const buffer = new ArrayBuffer(data.byteLength);
+  new Uint8Array(buffer).set(data);
+  const blob = new Blob([buffer], { type: "application/zip" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;

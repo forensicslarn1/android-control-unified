@@ -1,0 +1,123 @@
+{
+  "project_info": {
+    "title": "Authorized Forensics + De-Google",
+    "created": 1787873403.375,
+    "last_updated": 1787875215.295,
+    "total_slides": 11
+  },
+  "slides": [
+    {
+      "id": "cover",
+      "state": "edited",
+      "pageNum": 1
+    },
+    {
+      "id": "one_model",
+      "state": "edited",
+      "pageNum": 2
+    },
+    {
+      "id": "serial_authorization",
+      "state": "edited",
+      "pageNum": 3
+    },
+    {
+      "id": "no_transmission",
+      "state": "edited",
+      "pageNum": 4
+    },
+    {
+      "id": "intelligible_status",
+      "state": "edited",
+      "pageNum": 5
+    },
+    {
+      "id": "screenshots",
+      "state": "edited",
+      "pageNum": 6
+    },
+    {
+      "id": "packets",
+      "state": "edited",
+      "pageNum": 7
+    },
+    {
+      "id": "migration",
+      "state": "edited",
+      "pageNum": 8
+    },
+    {
+      "id": "case_bundle",
+      "state": "edited",
+      "pageNum": 9
+    },
+    {
+      "id": "next_sequence",
+      "state": "edited",
+      "pageNum": 10
+    },
+    {
+      "id": "sources",
+      "state": "edited",
+      "pageNum": 11
+    }
+  ],
+  "outline": [
+    {
+      "id": "cover",
+      "title": "Authorized Forensics + De-Google",
+      "summary": "Cover slide for the safe local workflow integration presentation."
+    },
+    {
+      "id": "one_model",
+      "title": "One local operating model",
+      "summary": "Connect evidence, De-Google, and serial assessment in one local-first governance model."
+    },
+    {
+      "id": "serial_authorization",
+      "title": "Serial assessment starts with authorization",
+      "summary": "Explain authorization, port inventory, and passive observation as the first serial safeguards."
+    },
+    {
+      "id": "no_transmission",
+      "title": "No arbitrary serial transmission",
+      "summary": "Explain the absence of exploit delivery, arbitrary AT commands, and hidden security changes."
+    },
+    {
+      "id": "intelligible_status",
+      "title": "Evidence status remains intelligible",
+      "summary": "Show clear outcomes, timestamps, configuration context, and blocked state preservation."
+    },
+    {
+      "id": "screenshots",
+      "title": "Screenshots need a capture record",
+      "summary": "Outline deliberate capture, redaction preview, hash, and case-bundle record experience.",
+      "image_plan": "/home/ubuntu/upload/Screenshot_٢٠٢٦٠٨٢٤_٠٣٥٥١٨_Chrome.jpg - Screenshot of the De-Google app interface showing levels of de-googling (Essential, Low, Medium, High, Total), perfectly matching the De-Google workflow discussion."
+    },
+    {
+      "id": "packets",
+      "title": "Packet evidence is import-first",
+      "summary": "Clarify the safe PCAP/diagnostic import-first approach and explicit privacy controls."
+    },
+    {
+      "id": "migration",
+      "title": "De-Google becomes migration planning",
+      "summary": "Show inventory/OEM guardrails, alternative selection, and favorites case bundles."
+    },
+    {
+      "id": "case_bundle",
+      "title": "One case bundle joins the records",
+      "summary": "Explain common manifest and separated evidence records in local bundles."
+    },
+    {
+      "id": "next_sequence",
+      "title": "Next safe implementation sequence",
+      "summary": "Present the planned progression for serial UI, screenshot export, and packet import."
+    },
+    {
+      "id": "sources",
+      "title": "Sources",
+      "summary": "List the authoritative and project references informing the design."
+    }
+  ]
+}

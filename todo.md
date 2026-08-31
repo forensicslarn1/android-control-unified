@@ -75,3 +75,12 @@
 - [x] Prepare and generate slides covering forensic and De-Google integration.
 - [x] Validate Evidence Snapshot, case-bundle export, presentation content, and project health.
 - [ ] Save the evidence snapshot and case-bundle checkpoint.
+- [x] Define the non-destructive Serial/Modem Security Assessment interface and safety controls.
+- [x] Define UX improvements for forensic screenshot capture and packet export.
+- [x] Prepare and generate an integration slide deck for authorized forensics and De-Google migration.
+- [x] Report the interface design, UX recommendations, and presentation deliverable.
+- [x] Add browser-local bilingual notification center with unread count, priority filters, read/clear controls, and local settings.
+- [x] Emit notifications for ADB receipts, exports, and user attention states.
+- [x] Add unit coverage for notification validation and priority filtering.
+- [x] Validate the notification center visually and with TypeScript, tests, production build, and runtime logs.
+- [x] Save the custom notifications checkpoint.

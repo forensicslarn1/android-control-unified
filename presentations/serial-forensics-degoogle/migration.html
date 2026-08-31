@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>De-Google becomes migration planning</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    /* Pull the whole slide up so the bottom is strictly below 720px while keeping min-height: 720px */
+    .slide-container { width: 1280px; min-height: 720px; margin-top: -56px; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    .head { margin: 52px 84px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 11px; font-size: 40px; letter-spacing: -1.7px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; background: #0A2540; color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-family: "Courier New", monospace; }
+    /* Reduced top gap to pull the flow up */
+    .flow { margin: 40px 84px 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #0A2540; border-bottom: 1px solid #0A2540; }
+    /* Slightly shorter stages and reduced inner top padding */
+    .stage { min-height: 300px; border-right: 1px solid rgba(10,37,64,.27); padding-top: 16px; padding-left: 24px; padding-right: 22px; }
+    .stage:last-child { border-right: 0; }
+    .stage-no { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 1.1px; }
+    .stage h2 { margin-top: 18px; font-size: 23px; line-height: 1.08; letter-spacing: -.8px; }
+    .stage p { margin-top: 12px; color: #425466; font-size: 14px; line-height: 1.52; }
+    /* Tighter lists to save vertical space */
+    .list { margin-top: 12px; list-style: none; color: #0A2540; font-size: 13px; line-height: 1.4; }
+    .list li { margin-top: 6px; }
+    .list li:before { content: "—"; color: #00A88E; margin-right: 7px; }
+    .stamp { display: inline-block; margin-top: 14px; border-top: 2px solid #00D4B2; padding-top: 6px; color: #0A2540; font-family: "Courier New", monospace; font-size: 10px; letter-spacing: .7px; text-transform: uppercase; }
+    /* Pull the rule block up a bit */
+    .rule { margin: 20px 84px 0; display: grid; grid-template-columns: 200px 1fr; gap: 20px; border-top: 3px solid #00D4B2; padding-top: 13px; }
+    .rule .label { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 1px; }
+    .rule p { color: #425466; font-size: 15px; line-height: 1.46; }
+    .rule strong { color: #0A2540; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="head"><div><p class="eyebrow">De-Google integration / 08</p><h1>De-Google becomes migration planning</h1></div><div class="index">08</div></div>
+    <div class="flow">
+      <section class="stage"><p class="stage-no">01 / INVENTORY</p><h2>Start with the device that exists</h2><p>Candidate package counts are based on the connected device inventory, not a generic static total.</p><ul class="list"><li>Installed-package review</li><li>Level-specific preview</li><li>Visible package names</li></ul><span class="stamp">No assumed packages</span></section>
+      <section class="stage"><p class="stage-no">02 / GUARD</p><h2>Apply OEM-aware caution</h2><p>Manufacturer profiles highlight vendor-sensitive components and retain core services as review-only.</p><ul class="list"><li>Manual profile selection</li><li>Auto-detected context</li><li>Expert-review indicators</li></ul><span class="stamp">No core bulk action</span></section>
+      <section class="stage"><p class="stage-no">03 / REPLACE</p><h2>Prepare alternatives first</h2><p>Alternatives show category, source, direct user-initiated link, and Android-version compatibility.</p><ul class="list"><li>Search and filters</li><li>Compatibility badges</li><li>Local Favorites control</li></ul><span class="stamp">No auto-download</span></section>
+      <section class="stage"><p class="stage-no">04 / RECORD</p><h2>Export the migration shortlist</h2><p>Saved Favorites become a timestamped local case bundle with readable and structured records.</p><ul class="list"><li>Manifest and case ID</li><li>Markdown and JSON</li><li>Local user export</li></ul><span class="stamp">No silent install</span></section>
+    </div>
+    <div class="rule"><p class="label">MIGRATION RULE</p><p><strong>Prepare compatible replacements before changing a dependency.</strong> The De-Google workflow is a documented transition plan: review the real device, choose a cautious reversible action where appropriate, and retain the alternatives record locally.</p></div>
+  </div>
+</body>
+</html>

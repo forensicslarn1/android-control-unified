@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Screenshots need a capture record</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    .slide-container { width: 1280px; min-height: 720px; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    .head { margin: 48px 78px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 11px; font-size: 39px; line-height: 1.04; letter-spacing: -1.6px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; background: #0A2540; color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-family: "Courier New", monospace; }
+    /* Reduced vertical spacing and sizes to avoid overflow */
+    .layout { margin: 18px 78px 0; display: grid; grid-template-columns: 480px 1fr; gap: 24px; }
+    .evidence { border-top: 2px solid #0A2540; border-bottom: 1px solid #0A2540; min-height: 360px; padding-top: 10px; padding-left: 12px; padding-right: 12px; }
+    .evidence-label { color: #00A88E; font-family: "Courier New", monospace; font-size: 11px; letter-spacing: 1.1px; }
+    .image-frame { margin-top: 8px; width: 448px; height: 280px; background: #0A2540; border: 1px solid #0A2540; display: flex; align-items: center; justify-content: center; }
+    .image-frame img { width: 432px; height: 264px; object-fit: contain; }
+    .caption { margin-top: 6px; color: #425466; font-size: 11px; line-height: 1.4; }
+    .record { border-top: 1px solid #0A2540; }
+    .step { min-height: 64px; display: grid; grid-template-columns: 54px 1fr 154px; gap: 12px; border-bottom: 1px solid rgba(10,37,64,.24); padding-top: 8px; padding-bottom: 8px; }
+    .step-no { color: #00A88E; font-family: "Courier New", monospace; font-size: 13px; }
+    .step h2 { font-size: 18px; letter-spacing: -.45px; }
+    .step p { margin-top: 4px; color: #425466; font-size: 13px; line-height: 1.42; }
+    .status { border-top: 2px solid #00D4B2; padding-top: 4px; color: #0A2540; font-family: "Courier New", monospace; font-size: 10px; line-height: 1.55; text-transform: uppercase; }
+    .foot { margin: 8px 78px 0; display: grid; grid-template-columns: 190px 1fr; gap: 12px; border-top: 3px solid #00D4B2; padding-top: 8px; }
+    .foot-label { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 1px; }
+    .foot p { color: #425466; font-size: 14px; line-height: 1.45; }
+    .foot strong { color: #0A2540; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="head"><div><p class="eyebrow">Forensic export UX / 06</p><h1>Screenshots need a capture record</h1></div><div class="index">06</div></div>
+    <div class="layout">
+      <section class="evidence">
+        <p class="evidence-label">CAPTURE EXAMPLE / MIRROR FRAME</p>
+        <div class="image-frame"><img src="/home/ubuntu/upload/Screenshot_٢٠٢٦٠٨٢٤_٠٣٥٥١٨_Chrome.jpg" alt="Example Android De-Google interface used as an evidence-frame reference" /></div>
+        <p class="caption">A captured frame is treated as an evidence item with its own record—not merely a visual export.</p>
+      </section>
+      <section class="record">
+        <div class="step"><span class="step-no">01</span><div><h2>Deliberate capture</h2><p>The operator initiates capture from the active mirror frame. The application does not save screenshots in the background.</p></div><span class="status">USER INITIATED<br>ACTIVE MIRROR</span></div>
+        <div class="step"><span class="step-no">02</span><div><h2>Preview optional redaction</h2><p>Visual redaction regions are reviewed before export. The redaction preview stays distinct from the original capture.</p></div><span class="status">PREVIEW ONLY<br>ORIGINAL RETAINED</span></div>
+        <div class="step"><span class="step-no">03</span><div><h2>Record integrity context</h2><p>UTC timestamp, case reference, evidence note, local SHA-256 hash, and related receipt ID travel with the capture.</p></div><span class="status">HASHED<br>RECEIPT LINKED</span></div>
+        <div class="step"><span class="step-no">04</span><div><h2>Add to case bundle</h2><p>The image and Markdown/JSON record join a user-initiated local export alongside other selected evidence.</p></div><span class="status">LOCAL ZIP<br>NO DEFAULT UPLOAD</span></div>
+      </section>
+    </div>
+    <div class="foot"><span class="foot-label">UX PRINCIPLE</span><p><strong>Make the evidence context visible at the moment of capture.</strong> The user should know what will be saved, how it is labeled, and which case record it belongs to before export.</p></div>
+  </div>
+</body>
+</html>

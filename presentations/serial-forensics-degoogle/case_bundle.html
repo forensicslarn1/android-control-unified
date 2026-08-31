@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>One case bundle joins the records</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    /* keep the min-height property (reduced to fit under 720px total) */
+    .slide-container { width: 1280px; min-height: 680px; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    .head { margin: 40px 82px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 10px; font-size: 39px; letter-spacing: -1.7px; line-height: 1.05; }
+    .index { width: 46px; height: 46px; border-radius: 50%; background: #0A2540; color: #F0F4F8; display: flex; align-items: center; justify-content: center; font-family: "Courier New", monospace; }
+    /* reduced system area height and tightened spacing */
+    .system { margin: 18px 82px 0; display: grid; grid-template-columns: 365px 286px 1fr; gap: 0; min-height: 320px; border-top: 1px solid #0A2540; border-bottom: 1px solid #0A2540; }
+    .branches { padding-top: 8px; padding-right: 16px; }
+    .branch { min-height: 56px; display: grid; grid-template-columns: 42px 1fr; gap: 8px; border-bottom: 1px solid rgba(10,37,64,.23); align-items: center; }
+    .branch:last-child { border-bottom: 0; }
+    .branch-no { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; }
+    .branch h2 { font-size: 16px; letter-spacing: -.35px; }
+    .branch p { margin-top: 5px; color: #425466; font-family: "Courier New", monospace; font-size: 11px; line-height: 1.4; }
+    .manifest { background: #0A2540; color: #F0F4F8; padding-top: 12px; padding-left: 16px; padding-right: 16px; }
+    .manifest .tag { color: #00D4B2; font-family: "Courier New", monospace; font-size: 11px; letter-spacing: 1.1px; }
+    .manifest h2 { margin-top: 10px; font-size: 26px; line-height: 1.06; letter-spacing: -1px; }
+    .manifest p { margin-top: 8px; color: #C9D7E2; font-size: 13px; line-height: 1.5; }
+    .manifest-list { margin-top: 10px; border-top: 1px solid rgba(240,244,248,.29); }
+    .manifest-list div { min-height: 30px; border-bottom: 1px solid rgba(240,244,248,.18); padding-top: 6px; }
+    .manifest-list b { display: block; color: #8BA0B2; font-family: "Courier New", monospace; font-size: 9px; letter-spacing: .9px; }
+    .manifest-list span { display: block; margin-top: 3px; font-size: 11px; }
+    .principle { padding-top: 12px; padding-left: 24px; padding-right: 16px; }
+    .principle .tag { color: #00A88E; font-family: "Courier New", monospace; font-size: 11px; letter-spacing: 1.1px; }
+    .principle h2 { margin-top: 10px; font-size: 25px; letter-spacing: -1px; line-height: 1.1; }
+    .principle p { margin-top: 10px; color: #425466; font-size: 15px; line-height: 1.5; }
+    .checks { margin-top: 12px; border-top: 2px solid #00D4B2; }
+    .checks div { min-height: 30px; border-bottom: 1px solid rgba(10,37,64,.21); padding-top: 6px; color: #0A2540; font-size: 13px; }
+    .checks span { color: #00A88E; font-family: "Courier New", monospace; margin-right: 10px; }
+    .foot { margin: 12px 82px 24px; display: grid; grid-template-columns: 205px 1fr; gap: 12px; }
+    .foot-label { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 1px; }
+    .foot p { color: #425466; font-size: 14px; line-height: 1.45; }
+    .foot strong { color: #0A2540; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="head"><div><p class="eyebrow">Local case export / 09</p><h1>One case bundle joins the records</h1></div><div class="index">09</div></div>
+    <div class="system">
+      <section class="branches">
+        <div class="branch"><span class="branch-no">01</span><div><h2>Evidence Snapshot</h2><p>evidence/collection-results.md · evidence/outcomes.json</p></div></div>
+        <div class="branch"><span class="branch-no">02</span><div><h2>Mirror screenshot record</h2><p>screenshots/frame.png · screenshots/capture-record.json</p></div></div>
+        <div class="branch"><span class="branch-no">03</span><div><h2>Packet evidence intake</h2><p>packets/metadata.json · optional supplied original</p></div></div>
+        <div class="branch"><span class="branch-no">04</span><div><h2>De-Google migration</h2><p>migration/favorites.md · migration/favorites.json</p></div></div>
+      </section>
+      <section class="manifest">
+        <p class="tag">ROOT / CASE-MANIFEST.JSON</p><h2>One source of case context</h2><p>The manifest anchors separate artifacts without flattening their meaning or overwriting originals.</p>
+        <div class="manifest-list"><div><b>CASE REFERENCE</b><span>Operator-entered identifier</span></div><div><b>UTC TIMESTAMPS</b><span>Creation and export time</span></div><div><b>DEVICE CONTEXT</b><span>Authorized session summary</span></div><div><b>SELECTED SCOPE</b><span>Included evidence categories</span></div></div>
+      </section>
+      <aside class="principle">
+        <p class="tag">EXPORT PRINCIPLE</p><h2>Join context, preserve separation.</h2><p>Evidence, migration planning, and supplied artifacts remain distinct so a later reviewer can identify their origin and purpose.</p>
+        <div class="checks"><div><span>+</span>Readable Markdown for review</div><div><span>+</span>JSON for structured local analysis</div><div><span>+</span>User-initiated browser-local ZIP</div></div>
+      </aside>
+    </div>
+    <div class="foot"><span class="foot-label">CONTROL BOUNDARY</span><p><strong>Adding an item to a case bundle is not a transformation step.</strong> The workflow records provenance and export choice while leaving original artifacts intact and under user control.</p></div>
+  </div>
+</body>
+</html>

@@ -104,7 +104,21 @@ function bytesEqual(left: Uint8Array, right: Uint8Array) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-function asU8(buffer: ArrayBuffer) { return new Uint8Array(buffer); }
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+}
+
+function asU8(buffer: ArrayBuffer): Uint8Array<ArrayBuffer> {
+  const copy = new Uint8Array(new ArrayBuffer(buffer.byteLength));
+  copy.set(new Uint8Array(buffer));
+  return copy;
+}
+
+function cryptoBytes(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  return asU8(toArrayBuffer(bytes));
+}
 
 function parseLengthPrefixed(data: Uint8Array) {
   const reader = new Reader(data);
@@ -201,20 +215,20 @@ async function verifySignerSignature(algorithm: SignatureAlgorithm, publicKey: U
   try {
     if (algorithm.kind === "dsa") return { verified: false, supported: false, note: "DSA APK signatures cannot be verified by Web Crypto in this inspector." };
     if (algorithm.kind === "rsa-pss") {
-      const key = await crypto.subtle.importKey("spki", publicKey, { name: "RSA-PSS", hash: algorithm.hash }, false, ["verify"]);
-      const verified = await crypto.subtle.verify({ name: "RSA-PSS", saltLength: algorithm.saltLength || 0 }, key, signature, signedData);
+      const key = await crypto.subtle.importKey("spki", cryptoBytes(publicKey), { name: "RSA-PSS", hash: algorithm.hash }, false, ["verify"]);
+      const verified = await crypto.subtle.verify({ name: "RSA-PSS", saltLength: algorithm.saltLength || 0 }, key, cryptoBytes(signature), cryptoBytes(signedData));
       return { verified, supported: true, note: verified ? "Signer signature matches the protected signed data." : "Signer signature does not match the protected signed data." };
     }
     if (algorithm.kind === "rsa-pkcs1") {
-      const key = await crypto.subtle.importKey("spki", publicKey, { name: "RSASSA-PKCS1-v1_5", hash: algorithm.hash }, false, ["verify"]);
-      const verified = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, signedData);
+      const key = await crypto.subtle.importKey("spki", cryptoBytes(publicKey), { name: "RSASSA-PKCS1-v1_5", hash: algorithm.hash }, false, ["verify"]);
+      const verified = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, cryptoBytes(signature), cryptoBytes(signedData));
       return { verified, supported: true, note: verified ? "Signer signature matches the protected signed data." : "Signer signature does not match the protected signed data." };
     }
     const curves: Array<[NamedCurve, number]> = algorithm.hash === "SHA-256" ? [["P-256", 32], ["P-384", 48], ["P-521", 66]] : [["P-521", 66], ["P-384", 48], ["P-256", 32]];
     for (const [namedCurve, size] of curves) {
       try {
-        const key = await crypto.subtle.importKey("spki", publicKey, { name: "ECDSA", namedCurve }, false, ["verify"]);
-        const verified = await crypto.subtle.verify({ name: "ECDSA", hash: algorithm.hash }, key, ecdsaDerToRaw(signature, size), signedData);
+        const key = await crypto.subtle.importKey("spki", cryptoBytes(publicKey), { name: "ECDSA", namedCurve }, false, ["verify"]);
+        const verified = await crypto.subtle.verify({ name: "ECDSA", hash: algorithm.hash }, key, cryptoBytes(ecdsaDerToRaw(signature, size)), cryptoBytes(signedData));
         return { verified, supported: true, note: verified ? "Signer signature matches the protected signed data." : "Signer signature does not match the protected signed data." };
       } catch { /* try the next standard EC curve */ }
     }
@@ -238,7 +252,7 @@ async function apkContentDigest(bytes: Uint8Array, layout: NonNullable<ReturnTyp
       framed[0] = 0xa5;
       new DataView(framed.buffer).setUint32(1, chunk.length, true);
       framed.set(chunk, 5);
-      chunkDigests.push(asU8(await crypto.subtle.digest(hash, framed)));
+      chunkDigests.push(asU8(await crypto.subtle.digest(hash, cryptoBytes(framed))));
     }
   }
   const joined = new Uint8Array(5 + chunkDigests.reduce((total, digest) => total + digest.length, 0));
@@ -246,13 +260,13 @@ async function apkContentDigest(bytes: Uint8Array, layout: NonNullable<ReturnTyp
   new DataView(joined.buffer).setUint32(1, count, true);
   let offset = 5;
   for (const digest of chunkDigests) { joined.set(digest, offset); offset += digest.length; }
-  return asU8(await crypto.subtle.digest(hash, joined));
+  return asU8(await crypto.subtle.digest(hash, cryptoBytes(joined)));
 }
 
 async function certificateDetails(raw: Uint8Array) {
-  const fingerprintSha256 = hex(await crypto.subtle.digest("SHA-256", raw));
+  const fingerprintSha256 = hex(await crypto.subtle.digest("SHA-256", cryptoBytes(raw)));
   try {
-    const certificate = Certificate.fromBER(raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength));
+    const certificate = Certificate.fromBER(toArrayBuffer(raw));
     const spki = new Uint8Array(certificate.subjectPublicKeyInfo.toSchema().toBER(false));
     return { fingerprintSha256, subject: certificate.subject.toString(), issuer: certificate.issuer.toString(), validFrom: certificate.notBefore.toString(), validTo: certificate.notAfter.toString(), spki };
   } catch { return { fingerprintSha256 }; }
@@ -290,7 +304,8 @@ async function inspectScheme(scheme: "v2" | "v3", value: Uint8Array | undefined,
       const detail = certificates[0] ? await certificateDetails(certificates[0]) : undefined;
       const publicKeyMatches = Boolean(detail?.spki && bytesEqual(detail.spki, publicKey));
       const proofOfRotation = attributes.some((attribute) => new Reader(attribute).u32() === PROOF_OF_ROTATION_ID);
-      const candidates = signatures.map((signature) => ({ ...signature, algorithm: algorithmFor(signature.id) })).filter((item): item is { id: number; value: Uint8Array; algorithm: SignatureAlgorithm } => Boolean(item.algorithm)).sort((left, right) => right.algorithm.rank - left.algorithm.rank);
+      type SignatureCandidate = { id: number; value: Uint8Array<ArrayBuffer>; algorithm: SignatureAlgorithm };
+      const candidates = signatures.map((signature) => ({ ...signature, algorithm: algorithmFor(signature.id) })).filter((item): item is SignatureCandidate => item.algorithm !== undefined).sort((left, right) => right.algorithm.rank - left.algorithm.rank);
       const matching = candidates.find((candidate) => digests.some((digest) => digest.id === candidate.id));
       const trailingNote = protectedTrailingBytes ? ` ${protectedTrailingBytes} protected trailing byte(s) were retained for Android-compatible signer parsing.` : "";
       if (!detail) return { index, signatureVerified: false, contentVerified: false, minSdk: innerMinSdk, maxSdk: innerMaxSdk, proofOfRotation, note: `Signer has no parseable X.509 certificate.${trailingNote}` };
@@ -318,7 +333,7 @@ async function inspectJarCertificate(entries: Record<string, Uint8Array>): Promi
   if (!entry) return { status: "not-found", note: "No v1 JAR signature block was found." };
   const block = entries[entry];
   try {
-    const content = ContentInfo.fromBER(block.buffer.slice(block.byteOffset, block.byteOffset + block.byteLength));
+    const content = ContentInfo.fromBER(toArrayBuffer(block));
     if (content.contentType !== ContentInfo.SIGNED_DATA) throw new Error("The signature block is not CMS SignedData.");
     const signed = new SignedData({ schema: content.content });
     const certificate = signed.certificates?.find((candidate) => candidate instanceof Certificate) as Certificate | undefined;
@@ -326,7 +341,7 @@ async function inspectJarCertificate(entries: Record<string, Uint8Array>): Promi
     const raw = certificate.toSchema().toBER(false);
     return { status: "available", entry, subject: certificate.subject.toString(), issuer: certificate.issuer.toString(), validFrom: certificate.notBefore.toString(), validTo: certificate.notAfter.toString(), fingerprintSha256: hex(await crypto.subtle.digest("SHA-256", raw)), note: "Embedded v1 JAR certificate parsed locally. v1 entry integrity is not independently revalidated by this inspector." };
   } catch (error) {
-    return { status: "signature-block-only", entry, fingerprintSha256: hex(await crypto.subtle.digest("SHA-256", block)), note: error instanceof Error ? `A v1 signature block was found, but its embedded certificate could not be parsed: ${error.message}` : "A v1 signature block was found, but its embedded certificate could not be parsed." };
+    return { status: "signature-block-only", entry, fingerprintSha256: hex(await crypto.subtle.digest("SHA-256", cryptoBytes(block))), note: error instanceof Error ? `A v1 signature block was found, but its embedded certificate could not be parsed: ${error.message}` : "A v1 signature block was found, but its embedded certificate could not be parsed." };
   }
 }
 

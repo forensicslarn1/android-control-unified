@@ -2,6 +2,7 @@
  * Field Service Ledger style: device identity dominates the workbench while
  * every consequential activity gets an inspectable, local command receipt.
  */
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { BrowserAdbClient, type CommandResult, type DeviceFile, type DeviceProfile, type MirrorSession } from "@/lib/adbClient";
@@ -10,6 +11,8 @@ import AboutWorkspace from "@/components/AboutWorkspace";
 import { DeGoogleWorkspace, type FavoriteAlternative } from "@/components/DeGoogleWorkspace";
 import { EvidenceSnapshotWorkspace, type EvidenceOperation, type EvidenceOutcome } from "@/components/EvidenceSnapshotWorkspace";
 import { FirstRunSetupDialog } from "@/components/FirstRunSetupDialog";
+import { NotificationCenter, loadLocalNotifications } from "@/components/NotificationCenter";
+import { type AppNotification, type NotificationTone } from "@/lib/notificationUtils";
 import { LiveMirrorWorkspace, type MirrorState } from "@/components/LiveMirrorWorkspace";
 import { ReceiptHistoryWorkspace, type HistoryReceipt } from "@/components/ReceiptHistoryWorkspace";
 import { ApkInspectionWorkspace } from "@/components/ApkInspectionWorkspace";
@@ -182,6 +185,13 @@ function loadReceiptArchives(): ReceiptArchive[] {
 }
 
 export default function Home() {
+  // The useAuth hook provides authentication state.
+  // To implement login/logout, call logout(), or start login from an event
+  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
+  // startLogin() during render (no href={startLogin()}) — it mints a one-time
+  // nonce cookie and must run only at the moment of navigation.
+  let { user, loading, error, isAuthenticated, logout } = useAuth();
+
   const adb = useRef(new BrowserAdbClient());
   const mirrorCanvas = useRef<HTMLCanvasElement | null>(null);
   const mirrorSession = useRef<MirrorSession | null>(null);
@@ -213,6 +223,7 @@ export default function Home() {
   const [recoveryScriptName, setRecoveryScriptName] = useState("android-control-recovery");
   const [setupOpen, setSetupOpen] = useState(() => !localStorage.getItem(FIRST_RUN_SETUP_KEY));
   const [shortcutGuideOpen, setShortcutGuideOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>(loadLocalNotifications);
 
   const activeReceiptArchive = useMemo(() => receiptArchives.find((archive) => archive.id === activeReceiptArchiveId) || receiptArchives[0], [receiptArchives, activeReceiptArchiveId]);
   const receiptHistory = activeReceiptArchive?.receipts || [];
@@ -244,11 +255,31 @@ export default function Home() {
     [mappedPackages, query, recommendedOnly],
   );
 
+  const addNotification = (tone: NotificationTone, title: { en: string; ar: string }, body: { en: string; ar: string }) => {
+    const id = `notification-${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+    const notification: AppNotification = { id, tone, title, body, createdAt: new Date().toISOString(), read: false };
+    setNotifications((current) => [notification, ...current].slice(0, 100));
+  };
+
   const addReceipt = (result: CommandResult, label: string, authority: Receipt["authority"] = "USB", restore?: string) => {
     const receipt = { ...result, label, authority, restore };
     setReceipts((current) => [receipt, ...current].slice(0, 60));
     setReceiptHistory((current) => [receipt, ...current].slice(0, 240));
+    const successful = result.exitCode === 0;
+    addNotification(successful ? "success" : "error", successful ? { en: "Operation recorded", ar: "تم تسجيل العملية" } : { en: "Operation needs attention", ar: "العملية تحتاج إلى مراجعة" }, { en: `${label}: ${commandName(result.command)}`, ar: `${label}: ${commandName(result.command)}` });
   };
+
+  useEffect(() => {
+    const missing = [
+      !browserCapabilities.usb ? "WebUSB" : "",
+      !browserCapabilities.crypto ? "Web Crypto" : "",
+      !browserCapabilities.codecs ? "WebCodecs" : "",
+    ].filter(Boolean);
+    if (missing.length) {
+      const summary = missing.join(", ");
+      addNotification("warning", { en: "Browser readiness needs attention", ar: "جاهزية المتصفح تحتاج إلى انتباه" }, { en: `${summary} is unavailable; affected workflows will stay disabled or limited.`, ar: `${summary} غير متاح؛ ستبقى العمليات المتأثرة معطلة أو محدودة.` });
+    }
+  }, [browserCapabilities]);
 
   const downloadLocal = (filename: string, contents: string, type: string) => {
     const blob = new Blob([contents], { type });
@@ -282,6 +313,7 @@ export default function Home() {
       return [`## ${operation?.label || outcome.id}`, "", `- **Status:** ${outcome.status}`, `- **Command:** \`${outcome.result?.command || operation?.command || "(not run)"}\``, `- **Completed:** ${outcome.completedAt || "(not completed)"}`, "", "```text", outcome.result?.stderr || outcome.result?.stdout || "(no output)", "```", ""].join("\n");
     }).join("\n");
     exportTimestampedCaseBundle(caseId, { caseType: "authorized-evidence-snapshot", device: device ? { manufacturer: device.manufacturer, model: device.model, androidVersion: device.androidVersion, sdk: device.sdk, serial: device.serial } : null, selectedOperationIds: selectedOperations.map((operation) => operation.id), note: "Browser-local export. Android permission denials and failed operations remain visible." }, [{ name: "evidence/collection-results.md", content: `# Evidence Snapshot\n\nCase: ${caseId}\n\n${report}` }, { name: "evidence/outcomes.json", content: JSON.stringify(outcomes, null, 2) }]);
+    addNotification("success", { en: "Evidence bundle exported", ar: "تم تصدير حزمة الأدلة" }, { en: `${caseId}.zip is ready in this browser.`, ar: `الملف ${caseId}.zip جاهز في هذا المتصفح.` });
     toast.success(language === "ar" ? "تم تصدير حزمة الأدلة محلياً." : "Evidence case bundle exported locally.");
   };
 
@@ -290,6 +322,7 @@ export default function Home() {
     const caseId = createCaseId("migration-shortlist");
     const report = [`# Saved Alternative Migration Shortlist`, "", `Case: ${caseId}`, `Created: ${new Date().toISOString()}`, "", "These are user-selected links. Nothing was downloaded or installed.", "", ...favorites.flatMap((favorite, index) => [`## ${index + 1}. ${favorite.name}`, "", `- **Replaces:** ${favorite.replaces}`, `- **Category:** ${favorite.category}`, `- **Source:** ${favorite.source}`, `- **Minimum Android:** ${favorite.minAndroid ? `${favorite.minAndroid}+` : "not verified"}`, `- **Direct link:** ${favorite.url}`, ""])].join("\n");
     exportTimestampedCaseBundle(caseId, { caseType: "degoogle-alternative-migration", favorites: favorites.length, note: "User-selected alternatives only. The bundle has no download payloads or automated install instructions." }, [{ name: "migration/favorites.md", content: report }, { name: "migration/favorites.json", content: JSON.stringify(favorites, null, 2) }]);
+    addNotification("success", { en: "Migration bundle exported", ar: "تم تصدير حزمة الانتقال" }, { en: `${caseId}.zip contains the selected Favorites plan.`, ar: `يحتوي ${caseId}.zip على خطة المفضلة المختارة.` });
     toast.success(language === "ar" ? "تم تصدير حزمة انتقال المفضلة محلياً." : "Favorite migration case bundle exported locally.");
   };
 
@@ -301,6 +334,7 @@ export default function Home() {
       const report = [`# Android Control Center — Command Receipts`, "", `Exported: ${new Date().toISOString()}`, "", ...receipts.flatMap((receipt, index) => [`## ${index + 1}. ${receipt.label}`, "", `- **Authority:** ${receipt.authority}`, `- **Time:** ${receipt.at}`, `- **Command:** \`${receipt.command}\``, `- **Exit code:** ${receipt.exitCode}`, `- **Output:** ${receipt.stderr || receipt.stdout || "(none)"}`, receipt.restore ? `- **Restore:** \`${receipt.restore}\`` : "", ""])].join("\n");
       downloadLocal(`android-control-receipts-${stamp}.md`, report, "text/markdown");
     }
+    addNotification("success", { en: "Receipt export saved", ar: "تم حفظ تصدير الإيصالات" }, { en: `The ${format.toUpperCase()} ledger export was downloaded locally.`, ar: `تم تنزيل تصدير السجل بصيغة ${format.toUpperCase()} محلياً.` });
     toast.success("Receipt export saved locally.");
   };
 
@@ -313,6 +347,7 @@ export default function Home() {
     const safeName = recoveryScriptName.trim().replace(/[^A-Za-z0-9._-]/g, "-") || "android-control-recovery";
     const script = ["#!/usr/bin/env sh", "# Generated locally by Android Control Center.", "# Review every line before executing against a connected Android device.", "set -eu", "", "adb wait-for-device", "", ...restoreItems.flatMap((receipt) => [`# ${receipt.label}`, `adb shell ${receipt.restore}`, ""])].join("\n");
     downloadLocal(`${safeName}.sh`, script, "text/x-shellscript");
+    addNotification("success", { en: "Recovery script saved", ar: "تم حفظ سكربت الاستعادة" }, { en: `${safeName}.sh was downloaded locally for review.`, ar: `تم تنزيل ${safeName}.sh محلياً للمراجعة.` });
     toast.success("Recovery script saved locally. Review it before running.");
   };
 
@@ -326,6 +361,7 @@ export default function Home() {
       const report = [`# Android Control Center — ${archiveName}`, "", `Exported: ${new Date().toISOString()}`, "", ...receiptHistory.flatMap((receipt, index) => [`## ${index + 1}. ${receipt.label}`, "", `- **Authority:** ${receipt.authority}`, `- **Time:** ${receipt.at}`, `- **Command:** \`${receipt.command}\``, `- **Exit code:** ${receipt.exitCode}`, `- **Output:** ${receipt.stderr || receipt.stdout || "(none)"}`, receipt.restore ? `- **Restore:** \`${receipt.restore}\`` : "", ""])].join("\n");
       downloadLocal(`android-control-${safeArchiveName}-${stamp}.md`, report, "text/markdown");
     }
+    addNotification("success", { en: "Archive export saved", ar: "تم حفظ تصدير الأرشيف" }, { en: `${archiveName} was exported locally as ${format.toUpperCase()}.`, ar: `تم تصدير ${archiveName} محلياً بصيغة ${format.toUpperCase()}.` });
     toast.success(language === "ar" ? "تم حفظ تصدير الأرشيف محلياً." : "Receipt-history export saved locally.");
   };
 
@@ -347,6 +383,7 @@ export default function Home() {
     const envelope = { format: "android-control-encrypted-history", version: 1, cipher: "AES-256-GCM", kdf: { name: "PBKDF2", hash: "SHA-256", iterations: 250000, salt: bytesToBase64(salt) }, iv: bytesToBase64(iv), ciphertext: bytesToBase64(ciphertext) };
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     downloadLocal(`android-control-${safeArchiveName}-${stamp}.encrypted.json`, JSON.stringify(envelope, null, 2), "application/json");
+    addNotification("success", { en: "Encrypted archive exported", ar: "تم تصدير الأرشيف المشفر" }, { en: `${archiveName} was encrypted and downloaded locally.`, ar: `تم تشفير ${archiveName} وتنزيله محلياً.` });
     toast.success(language === "ar" ? "تم تصدير الأرشيف المشفر محلياً." : "Encrypted archive exported locally.");
   };
 
@@ -435,10 +472,12 @@ export default function Home() {
         "Browser",
       );
       await inspectAfterConnect();
+      addNotification("success", { en: "Device is ready", ar: "الجهاز جاهز" }, { en: `${profile.manufacturer} ${profile.model} is authorized and inventoried locally.`, ar: `تمت مصادقة ${profile.manufacturer} ${profile.model} وفهرسته محلياً.` });
       toast.success("Device inventory is ready.");
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Unable to connect to the selected device.";
       addReceipt({ command: "WebUSB → ADB authentication", stdout: "", stderr: detail, exitCode: 1, at: new Date().toISOString() }, "Connection stopped", "Browser");
+      addNotification("warning", { en: "Connection needs attention", ar: "الاتصال يحتاج إلى انتباه" }, { en: `${detail} Confirm the browser device chooser and the phone’s USB debugging approval.`, ar: `${detail} تحقق من اختيار الجهاز في المتصفح ومن موافقة تصحيح USB على الهاتف.` });
       toast.error(detail);
     } finally {
       setConnecting(false);
@@ -720,8 +759,10 @@ export default function Home() {
             <p className="kicker text-[#687584]">{isArabic ? "مكتب الخدمة" : "Service bench"} / {active === "overview" ? copy.ready : workspace}</p>
             <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">{active === "overview" ? (isArabic ? "حالة الخدمة المحلية" : "Local service status") : active === "about" ? copy.about : workspace}</h1>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+            <NotificationCenter language={language} notifications={notifications} setNotifications={setNotifications} />
             <div className={`status-stamp w-fit ${isLive ? "text-[#527321]" : "text-[#687584]"}`}><span>{isLive ? (isArabic ? "جهاز مباشر" : "live device") : (isArabic ? "غير متصل" : "not connected")}</span></div>
+
             <div className={`status-stamp w-fit ${browserCapabilities.usb ? "text-[#59869c]" : "text-[#934639]"}`}><span>{browserCapabilities.usb ? "WebUSB" : "WebUSB unavailable"}</span></div>
             <button onClick={() => setSetupOpen(true)} className="action-button inline-flex items-center gap-2 border border-[#14253a] bg-[#fffdf8] px-2.5 py-1.5 text-xs font-semibold text-[#14253a] hover:bg-[#e6f4bb] dark:border-[#d7e0e8] dark:bg-[#14253a] dark:text-[#e7eef3] dark:hover:bg-[#293f22]"><HelpCircle size={14} />{isArabic ? "إعداد الاتصال" : "Setup"}</button>
             <button onClick={() => setShortcutGuideOpen(true)} className="action-button hidden items-center gap-2 border border-[#14253a] bg-[#fffdf8] px-2.5 py-1.5 text-xs font-semibold text-[#14253a] hover:bg-[#e6f4bb] dark:border-[#d7e0e8] dark:bg-[#14253a] dark:text-[#e7eef3] dark:hover:bg-[#293f22] lg:inline-flex" title={isArabic ? "اختصارات لوحة المفاتيح" : "Keyboard shortcuts"}><Keyboard size={14} />{isArabic ? "اختصارات" : "Shortcuts"}<kbd className="mono border border-current px-1 text-[0.6rem]">?</kbd></button>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>No arbitrary serial transmission</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    .slide-container { width: 1280px; min-height: 720px; color: #0A2540; background-color: #F0F4F8; background-image: linear-gradient(rgba(10,37,64,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(10,37,64,.05) 1px, transparent 1px); background-size: 40px 40px; font-family: Arial, Helvetica, sans-serif; }
+    /* pulled header up slightly without touching title padding */
+    .head { margin: 42px 84px 0; display: flex; align-items: flex-start; justify-content: space-between; }
+    .eyebrow { color: #425466; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin-top: 10px; font-size: 40px; letter-spacing: -1.7px; }
+    .index { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #0A2540; color: #F0F4F8; font-family: "Courier New", monospace; }
+    /* reduced top margin and overall block height */
+    .boundary { margin: 18px 84px 0; display: grid; grid-template-columns: 1fr 380px; min-height: 340px; border-top: 1px solid #0A2540; border-bottom: 1px solid #0A2540; }
+    .allowed { padding-top: 12px; padding-left: 20px; padding-right: 20px; }
+    .excluded { padding-top: 12px; padding-left: 20px; padding-right: 20px; background: #0A2540; color: #F0F4F8; }
+    .tag { color: #00A88E; font-family: "Courier New", monospace; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; }
+    .excluded .tag { color: #00D4B2; }
+    h2 { margin-top: 14px; font-size: 27px; letter-spacing: -1px; }
+    .lead { margin-top: 8px; max-width: 555px; color: #425466; font-size: 15px; line-height: 1.5; }
+    .excluded .lead { color: #C9D7E2; }
+    .rows { margin-top: 8px; border-top: 1px solid rgba(10,37,64,.25); }
+    .excluded .rows { border-top-color: rgba(240,244,248,.25); }
+    /* slightly reduced row height and gaps to save vertical space */
+    .row { min-height: 40px; display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: center; border-bottom: 1px solid rgba(10,37,64,.2); }
+    .excluded .row { border-bottom-color: rgba(240,244,248,.18); }
+    .mark { color: #00A88E; font-family: "Courier New", monospace; font-size: 15px; }
+    .excluded .mark { color: #D39152; }
+    .row p { color: #0A2540; font-size: 14px; line-height: 1.35; }
+    .excluded .row p { color: #F0F4F8; }
+    .foot { margin: 12px 84px 0; display: grid; grid-template-columns: 205px 1fr; gap: 20px; border-top: 3px solid #00D4B2; }
+    .foot .tag { padding-top: 10px; }
+    .foot p { padding-top: 9px; color: #425466; font-size: 15px; line-height: 1.45; }
+    .foot strong { color: #0A2540; }
+  </style>
+</head>
+<body>
+  <div class="slide-container">
+    <div class="head"><div><p class="eyebrow">Serial control boundary / 04</p><h1>No arbitrary serial transmission</h1></div><div class="index">04</div></div>
+    <div class="boundary">
+      <section class="allowed">
+        <p class="tag">Permitted / default interface</p><h2>Read, record, stop</h2><p class="lead">The assessment surface is designed to document the selected interface without converting it into a payload-delivery or device-control tool.</p>
+        <div class="rows">
+          <div class="row"><span class="mark">+</span><p>Explicitly selected passive receive session</p></div>
+          <div class="row"><span class="mark">+</span><p>Visible local findings ledger</p></div>
+          <div class="row"><span class="mark">+</span><p>User-initiated local export</p></div>
+        </div>
+      </section>
+      <aside class="excluded">
+        <p class="tag">Excluded / standard workflow</p><h2>No hidden device change</h2><p class="lead">The interface does not expose transmission features capable of changing device state or delivering an unknown payload.</p>
+        <div class="rows">
+          <div class="row"><span class="mark">×</span><p>Arbitrary AT command entry</p></div>
+          <div class="row"><span class="mark">×</span><p>Shell injection or payload delivery</p></div>
+          <div class="row"><span class="mark">×</span><p>Debugging, permission, or security changes</p></div>
+        </div>
+      </aside>
+    </div>
+    <div class="foot"><p class="tag">Future active probes</p><p><strong>Only a reviewed, versioned, read-only query allowlist should ever be considered.</strong> Each item must show its purpose, expected response, rate limit, and a distinct operator confirmation before sending.</p></div>
+  </div>
+</body>
+</html>
