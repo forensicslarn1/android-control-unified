@@ -17,7 +17,7 @@ jobs:
             archive: android-control-center-windows-x64.zip
           - os: macos-latest
             platform: macos
-            archive: android-control-center-macos-arm64.zip
+            archive: android-control-center-macos-arm64.tar.gz
           - os: ubuntu-24.04
             platform: linux
             archive: android-control-center-linux-x64.tar.gz
