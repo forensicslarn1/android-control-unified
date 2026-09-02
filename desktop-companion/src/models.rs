@@ -37,7 +37,18 @@ pub struct CommandReceipt {
 }
 
 impl CommandReceipt {
-    pub fn browser(label: impl Into<String>, command: impl Into<String>, output: impl Into<String>, success: bool) -> Self {
-        Self { label: label.into(), command: command.into(), output: output.into(), success, restore: None }
+    pub fn browser(
+        label: impl Into<String>,
+        command: impl Into<String>,
+        output: impl Into<String>,
+        success: bool,
+    ) -> Self {
+        Self {
+            label: label.into(),
+            command: command.into(),
+            output: output.into(),
+            success,
+            restore: None,
+        }
     }
 }

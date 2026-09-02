@@ -16,7 +16,13 @@ pub enum CatalogError {
 }
 
 pub fn fetch() -> Result<HashMap<String, PackageDefinition>, CatalogError> {
-    let client = reqwest::blocking::Client::builder().user_agent("Android-Control-Center-Desktop/0.1").build()?;
-    let body = client.get(UAD_LIST_URL).send()?.error_for_status()?.text()?;
+    let client = reqwest::blocking::Client::builder()
+        .user_agent("Android-Control-Center-Desktop/0.1")
+        .build()?;
+    let body = client
+        .get(UAD_LIST_URL)
+        .send()?
+        .error_for_status()?
+        .text()?;
     Ok(serde_json::from_str(&body)?)
 }
