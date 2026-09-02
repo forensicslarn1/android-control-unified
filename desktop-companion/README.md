@@ -10,7 +10,7 @@ The app does not collect telemetry and never uploads device serials, installed p
 
 ## Windows release
 
-The supported distribution target is **Windows x64**. The release package contains the Rust desktop executable plus the official Android Platform Tools files required for ADB (`adb.exe`, `AdbWinApi.dll`, and `AdbWinUsbApi.dll`). The application first looks for `resources\\adb\\adb.exe` beside the executable and falls back to `adb.exe` on `PATH` when running from source.
+The supported distribution targets are **Windows x64, macOS, and Linux**. The release package contains the Rust desktop executable plus the official Android Platform Tools files required for ADB (`adb.exe`, `AdbWinApi.dll`, and `AdbWinUsbApi.dll`). The application first looks for `resources\\adb\\adb.exe` beside the executable and falls back to `adb.exe` on `PATH` when running from source.
 
 Install the Android USB driver appropriate for the phone, enable Developer options and USB debugging, connect the phone by USB, and accept the RSA authorization dialog. No device command runs before the user starts an inspection. The app remains local-first and does not upload serials, inventory, receipts, or command output.
 
@@ -20,7 +20,7 @@ To build on a Windows development machine, install the stable Rust MSVC toolchai
 .\\scripts\\build-windows.ps1
 ```
 
-The resulting executable is `desktop-companion\\target\\release\\android-control-center-desktop.exe`. The GitHub Actions workflow also builds and packages `android-control-center-windows-x64.zip` for manual runs and version tags. The workflow downloads Platform Tools from Google at build time; the repository does not commit vendor binaries.
+The resulting executable is `desktop-companion\\target\\release\\android-control-center-desktop.exe` on Windows, or the corresponding native binary on macOS/Linux. The cross-platform GitHub Actions workflow packages all three platforms, while the Windows workflow also produces `android-control-center-windows-x64.zip`. The workflow downloads Platform Tools from Google at build time; the repository does not commit vendor binaries.
 
 ## Optional Authenticode signing
 
@@ -35,7 +35,7 @@ Never commit the `.pfx` file or its password. When both secrets exist, GitHub Ac
 
 ## Source development
 
-For a source-only run, install Android Platform Tools so `adb` is on the system `PATH`, then run `cargo run --release` inside `desktop-companion`. The native UI is built with `eframe`/`egui`; the supported release artifact is Windows x64.
+For a source-only run, install Android Platform Tools so `adb` is on the system `PATH`, then run `cargo run --release` inside `desktop-companion`. The native UI is built with `eframe`/`egui`, which provides the shared native GUI across Windows, macOS, and Linux.
 
 ## References
 
