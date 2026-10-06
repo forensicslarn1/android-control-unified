@@ -86,3 +86,6 @@
 - [x] Save the custom notifications checkpoint.
 - [x] Add explicit per-package Disable, Uninstall & Keep Data, and Purge / Complete Uninstall actions with visible commands and restore receipts.
 - [x] Add package-command validation tests and verify the updated Debloat flow with Vitest and production build.
+- [x] Add a Design Lab v0 showcasing the blended Evidence Command Deck and Split-Brain Control Room direction.
+- [x] Preserve existing WebUSB, receipt, localization, and package-action contracts while adding the visual showcase.
+- [x] Validate the showcase with Vitest, production build, responsive browser rendering, and console checks.

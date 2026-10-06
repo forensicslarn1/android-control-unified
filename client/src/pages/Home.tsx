@@ -28,6 +28,7 @@ import {
   type EvidenceOutcome,
 } from "@/components/EvidenceSnapshotWorkspace";
 import { FirstRunSetupDialog } from "@/components/FirstRunSetupDialog";
+import { DesignShowcaseWorkspace } from "@/components/DesignShowcaseWorkspace";
 import {
   NotificationCenter,
   loadLocalNotifications,
@@ -66,6 +67,7 @@ import {
   FileArchive,
   FileText,
   Folder,
+  Gauge,
   HardDrive,
   History,
   HelpCircle,
@@ -105,7 +107,8 @@ type Workspace =
   | "files"
   | "evidence"
   | "history"
-  | "about";
+  | "about"
+  | "designlab";
 type InterfaceLanguage = "en" | "ar" | "other";
 type Receipt = CommandResult & {
   label: string;
@@ -132,6 +135,7 @@ const nav: Array<{ id: Workspace; label: string; icon: typeof Smartphone }> = [
   { id: "evidence", label: "Evidence Snapshot", icon: ClipboardCheck },
   { id: "history", label: "Receipt history", icon: History },
   { id: "about", label: "About", icon: Info },
+  { id: "designlab", label: "Design Lab", icon: Gauge },
 ];
 
 const languageCopy = {
@@ -151,6 +155,7 @@ const languageCopy = {
       evidence: "Evidence Snapshot",
       history: "Receipt history",
       about: "About",
+      designlab: "Design Lab",
     },
     ready: "ready",
     inspect: "Inspect first. Change only what you can explain.",
@@ -172,6 +177,7 @@ const languageCopy = {
       evidence: "لقطة الأدلة",
       history: "أرشيف الإيصالات",
       about: "حول",
+      designlab: "مختبر التصميم",
     },
     ready: "جاهز",
     inspect: "افحص أولاً. غيّر فقط ما تستطيع شرحه.",
@@ -193,6 +199,7 @@ const languageCopy = {
       evidence: "Evidence Snapshot",
       history: "Receipt history",
       about: "About",
+      designlab: "Design Lab",
     },
     ready: "ready",
     inspect: "Inspect first. Change only what you can explain.",
@@ -1489,12 +1496,12 @@ export default function Home() {
     ? [
         { label: "تحكم الجهاز", items: nav.slice(0, 5) },
         { label: "المراجعة والأمان", items: nav.slice(5, 8) },
-        { label: "الأدلة", items: nav.slice(8) },
+        { label: "الأدلة والتجارب", items: nav.slice(8) },
       ]
     : [
         { label: "Device control", items: nav.slice(0, 5) },
         { label: "Review & safety", items: nav.slice(5, 8) },
-        { label: "Evidence", items: nav.slice(8) },
+        { label: "Evidence & experiments", items: nav.slice(8) },
       ];
   const debloatCopy = isArabic
     ? {
@@ -2534,6 +2541,9 @@ export default function Home() {
           />
         )}
         {active === "about" && <AboutWorkspace language={language} />}
+        {active === "designlab" && (
+          <DesignShowcaseWorkspace language={language} />
+        )}
 
         <section className="mt-7 border-t border-[#d8d1c4] pt-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
