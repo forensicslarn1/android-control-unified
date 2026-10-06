@@ -9,6 +9,7 @@ import { AdbDaemonWebUsbDeviceManager } from "@yume-chan/adb-daemon-webusb";
 import { AdbScrcpyClient, AdbScrcpyOptions2_1 } from "@yume-chan/adb-scrcpy";
 import { BitmapVideoFrameRenderer, WebCodecsVideoDecoder } from "@yume-chan/scrcpy-decoder-webcodecs";
 import { ReadableStream as AdbReadableStream, WritableStream } from "@yume-chan/stream-extra";
+import { assertPackageName, packageCommand, type PackageAction } from "@/lib/packageActions";
 
 export type DeviceProfile = {
   serial: string;
@@ -34,13 +35,11 @@ export type MirrorSession = {
   codec: string;
 };
 
-const packageId = /^[A-Za-z0-9._]+$/;
 const SCRCPY_SERVER_URL = "/manus-storage/scrcpy-server-2.1_0e0bd7e6.bin";
 const SCRCPY_SERVER_PATH = "/data/local/tmp/scrcpy-server.jar";
 
 function safePackage(value: string) {
-  if (!packageId.test(value)) throw new Error("Invalid package identifier.");
-  return value;
+  return assertPackageName(value);
 }
 
 function safeFilename(value: string) {
@@ -147,9 +146,13 @@ export class BrowserAdbClient {
     return { result, granted: result.exitCode === 0 && /uid=0/.test(result.stdout) };
   }
 
-  async disablePackage(id: string) { return this.run(`pm disable-user --user 0 ${safePackage(id)}`); }
+  async runPackageAction(action: PackageAction, id: string) { return this.run(packageCommand(action, id)); }
 
-  async uninstallForUser(id: string) { return this.run(`pm uninstall -k --user 0 ${safePackage(id)}`); }
+  async disablePackage(id: string) { return this.runPackageAction("disable", id); }
+
+  async uninstallForUser(id: string) { return this.runPackageAction("uninstall", id); }
+
+  async purgePackage(id: string) { return this.runPackageAction("purge", id); }
 
   async restorePackage(id: string) {
     const safe = safePackage(id);

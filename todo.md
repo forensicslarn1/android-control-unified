@@ -84,3 +84,5 @@
 - [x] Add unit coverage for notification validation and priority filtering.
 - [x] Validate the notification center visually and with TypeScript, tests, production build, and runtime logs.
 - [x] Save the custom notifications checkpoint.
+- [x] Add explicit per-package Disable, Uninstall & Keep Data, and Purge / Complete Uninstall actions with visible commands and restore receipts.
+- [x] Add package-command validation tests and verify the updated Debloat flow with Vitest and production build.
